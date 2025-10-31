@@ -1,0 +1,126 @@
+plugins {
+    id 'com.android.library'
+    alias libs.plugins.kotlin.android
+    alias libs.plugins.android.junit5
+}
+
+android {
+    compileSdkVersion 35
+    namespace 'org.twinlife.twinme.android'
+
+    buildFeatures {
+        buildConfig = true
+    }
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 35
+        buildConfigField "String", "VERSION", '"1.0.0"'
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["runnerBuilder"] = "de.mannodermaus.junit5.AndroidJUnit5Builder"
+    }
+
+    flavorDimensions = ["product", "tier"]
+
+    productFlavors {
+        twinme {
+            dimension "product"
+            // Define constant booleans so the compiler optimizes flavor-specific code away.
+            buildConfigField 'boolean', 'IS_TWINME', 'true'
+            buildConfigField 'boolean', 'IS_SKRED', 'false'
+        }
+        skred {
+            dimension "product"
+            buildConfigField 'boolean', 'IS_TWINME', 'false'
+            buildConfigField 'boolean', 'IS_SKRED', 'true'
+
+            dependencies {
+                implementation libs.play.services.location
+            }
+        }
+
+        free {
+            dimension "tier"
+            buildConfigField 'boolean', 'IS_PLUS', 'false'
+        }
+        '+' {
+            dimension "tier"
+            buildConfigField 'boolean', 'IS_PLUS', 'true'
+        }
+    }
+
+    // Only define necessary variants
+    variantFilter { variant ->
+        def names = variant.flavors*.name
+
+        if (names.contains("skred")) {
+            if(names.contains("+")) {
+                // skred doesn't have a "plus" variant
+                setIgnore(true)
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        staging {
+            initWith buildTypes.release
+        }
+    }
+
+    sourceSets {
+        main {
+            manifest.srcFile 'src/android/AndroidManifest.xml'
+            java.srcDirs = ['src/main/java', 'src/android/java']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+dependencies {
+    api fileTree(include: ['*.jar'], dir: 'libs')
+    implementation project(':twinme-framework')
+    implementation project(':webrtc-framework')
+    implementation project(':twinlife-framework')
+
+    implementation libs.androidx.core
+    implementation libs.androidx.annotation
+    implementation libs.androidx.appcompat
+    implementation libs.androidx.media
+    implementation libs.androidx.exifinterface
+    api libs.androidx.percentlayout
+
+    api libs.androidx.media3.exoplayer
+    implementation libs.androidx.media3.ui
+    implementation libs.androidx.media3.decoder
+    implementation libs.androidx.media3.datasource
+    implementation libs.androidx.media3.common
+    implementation libs.androidx.media3.session
+    implementation libs.androidx.media3.muxer
+    implementation libs.androidx.media3.transformer
+
+    implementation libs.zip4j
+    implementation libs.glide
+
+    implementation(libs.firebase.messaging) {
+        exclude group: 'com.google.firebase', module: 'firebase-core'
+        exclude group: 'com.google.firebase', module: 'firebase-analytics'
+        exclude group: 'com.google.firebase', module: 'firebase-measurement-connector'
+    }
+
+    testImplementation libs.junit.jupiter
+    androidTestRuntimeOnly libs.android.test.runner
+    androidTestImplementation libs.android.test.core
+    androidTestImplementation libs.junit.jupiter.api
+    androidTestImplementation libs.junit.jupiter
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.junit
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.junit.jupiter.params
+}
