@@ -270,11 +270,17 @@ public class CallParticipantService extends AbstractTwinmeService {
                 final Filter<RepositoryObject> filter = new Filter<RepositoryObject>(mSpace) {
                     @Override
                     public boolean accept(@NonNull RepositoryObject object) {
-                        final Contact contact = (Contact) object;
 
-                        return !contact.isTwinroom() && contact.hasPeer();
+                        if (!(object instanceof Contact)) {
+                            return false;
+                        }
+
+                        final Contact contact = (Contact) object;
+                        String contactName = normalize(object.getName());
+                        return !contact.isTwinroom() && contact.hasPeer() && contactName.contains(mFindName);
                     }
                 };
+
                 mTwinmeContext.findContacts(filter, (List<Contact> contacts) -> {
                     runOnGetContacts(mObserver, contacts);
                     mState |= FIND_CONTACTS_DONE;

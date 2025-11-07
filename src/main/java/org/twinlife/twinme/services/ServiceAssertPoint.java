@@ -18,7 +18,8 @@ public enum ServiceAssertPoint implements AssertPoint {
     INVALID_ID,
     INVALID_TWINCODE,
     GET_IDENTITY_IMAGE(true),
-    MAIN_THREAD(true);
+    MAIN_THREAD(true),
+    SERVICE_TIMEOUT(true);
 
     public int getIdentifier() {
 

@@ -741,6 +741,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         }
 
         boolean callInProgress = false;
+        final StartNotification notificationInfo;
         synchronized (sLock) {
             CallService service = sCurrent;
             if (service != null) {
@@ -755,7 +756,8 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
                 }
             }
 
-            sNotificationInfo = new StartNotification(callStatus, peerConnectionId, contact, avatar);
+            notificationInfo = new StartNotification(callStatus, peerConnectionId, contact, avatar);
+            sNotificationInfo = notificationInfo;
         }
 
         Intent intent = new Intent(context, CallService.class);
@@ -773,7 +775,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         if (!callInProgress && FeatureUtils.isTelecomSupported(context) && TelecomUtils.addIncomingTelecomCall(context, peerConnectionId, contact, offer.video)) {
             // Keep the intent to start CallService once Telecom gives us the go-ahead (see TelecomConnectionService.onCreateIncomingConnection()).
             synchronized (sLock) {
-                sNotificationInfo.startCallServiceIntent = intent;
+                notificationInfo.startCallServiceIntent = intent;
             }
         } else {
             startService(context, intent);
@@ -793,7 +795,8 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         Intent intent;
 
         synchronized (sLock) {
-            intent = sNotificationInfo.startCallServiceIntent;
+            final StartNotification notificationInfo = sNotificationInfo; // This is a volatile field!
+            intent = notificationInfo == null ? null : notificationInfo.startCallServiceIntent;
         }
 
         if (intent == null) {
@@ -1457,10 +1460,11 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         Bitmap avatar;
         CallStatus initialStatus;
         synchronized (sLock) {
-            if (sNotificationInfo != null) {
-                originator = sNotificationInfo.originator;
-                avatar = sNotificationInfo.avatar;
-                initialStatus = sNotificationInfo.callStatus;
+            final StartNotification notificationInfo = sNotificationInfo; // This is a volatile field!
+            if (notificationInfo != null) {
+                originator = notificationInfo.originator;
+                avatar = notificationInfo.avatar;
+                initialStatus = notificationInfo.callStatus;
             } else {
                 originator = null;
                 avatar = null;

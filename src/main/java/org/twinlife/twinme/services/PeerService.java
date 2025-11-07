@@ -19,10 +19,12 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import org.twinlife.twinlife.AssertPoint;
 import org.twinlife.twinlife.JobService;
 import org.twinlife.twinlife.util.EventMonitor;
 import org.twinlife.twinme.NotificationCenter;
 import org.twinlife.twinme.TwinmeApplication;
+import org.twinlife.twinme.TwinmeAssertPoint;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.calls.CallService;
 import org.twinlife.twinme.ui.Intents;
@@ -54,6 +56,7 @@ public class PeerService extends Service implements JobService.Observer {
     private int mNotificationId = 0;
     @Nullable
     private JobService.ProcessingLock mProcessingLock;
+    private long startTime = -1;
 
     public static void forceStop(@NonNull Context context) {
         if (DEBUG) {
@@ -123,6 +126,7 @@ public class PeerService extends Service implements JobService.Observer {
 
         mNotificationId = NotificationCenter.FOREGROUND_SERVICE_NOTIFICATION_ID;
         sIsRunning = true;
+        startTime = System.currentTimeMillis();
         initialize();
     }
 
@@ -175,6 +179,24 @@ public class PeerService extends Service implements JobService.Observer {
         }
 
         sIsRunning = false;
+    }
+
+    @Override
+    public void onTimeout(int startId, int fgsType) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onTimeout: startId=" + startId + " fgsType=" + fgsType);
+        }
+
+        if (mTwinmeContext != null) {
+            long duration = -1;
+            if (startTime != -1) {
+                duration = System.currentTimeMillis() - startTime;
+            }
+
+            mTwinmeContext.assertion(ServiceAssertPoint.SERVICE_TIMEOUT, AssertPoint.createLength(duration));
+        }
+
+        finish();
     }
 
     @Override

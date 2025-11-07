@@ -23,6 +23,7 @@ import androidx.annotation.Nullable;
 import org.twinlife.twinlife.AccountMigrationService.QueryInfo;
 import org.twinlife.twinlife.AccountMigrationService.State;
 import org.twinlife.twinlife.AccountMigrationService.Status;
+import org.twinlife.twinlife.AssertPoint;
 import org.twinlife.twinlife.BaseService;
 import org.twinlife.twinlife.BaseService.ErrorCode;
 import org.twinlife.twinlife.ConnectionStatus;
@@ -281,6 +282,8 @@ public class AccountMigrationService extends Service {
     private JobService.ProcessingLock mProcessingLock;
     private JobService.NetworkLock mNetworkLock;
 
+    private long startTime = -1;
+
     public static boolean isRunning() {
 
         AccountMigrationService service = sCurrent;
@@ -314,6 +317,8 @@ public class AccountMigrationService extends Service {
         }
 
         sCurrent = this;
+        startTime = System.currentTimeMillis();
+
         mTwinmeContextObserver = new TwinmeContextObserver();
         mAccountMigrationServiceObserver = new AccountMigrationServiceObserver();
 
@@ -413,6 +418,24 @@ public class AccountMigrationService extends Service {
         }
 
         super.onDestroy();
+    }
+
+    @Override
+    public void onTimeout(int startId, int fgsType) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onTimeout: startId=" + startId + " fgsType=" + fgsType);
+        }
+
+        if (mTwinmeContext != null) {
+            long duration = -1;
+            if (startTime != -1) {
+                duration = System.currentTimeMillis() - startTime;
+            }
+
+            mTwinmeContext.assertion(ServiceAssertPoint.SERVICE_TIMEOUT, AssertPoint.createLength(duration));
+        }
+
+        finish();
     }
 
     private void onActionIncomingMigration(@NonNull Intent intent) {

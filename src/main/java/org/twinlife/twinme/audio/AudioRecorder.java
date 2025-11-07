@@ -78,6 +78,12 @@ public class AudioRecorder {
 
         void onTimerUpdated(long duration, int amplitude);
 
+        /**
+         * Called if the recording is made up of several segments that need to be merged.
+         * If there is a single segment, onRecordingReady() will be called instantly.
+         */
+        void onRecordingProcessing();
+
         void onRecordingReady(@Nullable File recording);
     }
 
@@ -100,7 +106,7 @@ public class AudioRecorder {
             }
 
             handleError(ErrorCode.TRANSFORMER_ERROR, exportException);
-            cleanSegments();
+            release();
         }
 
         @Override
@@ -295,6 +301,14 @@ public class AudioRecorder {
     }
 
     public void release() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "release");
+        }
+        if (mExecutor.isShutdown()) {
+            // Release already called
+            return;
+        }
+
         mExecutor.execute(() -> {
             internalRelease();
             cleanSegments();
@@ -351,6 +365,7 @@ public class AudioRecorder {
             mRecorder.setAudioSamplingRate(44100);
             mRecorder.setAudioEncodingBitRate(32000);
             mRecorder.setAudioChannels(1);
+            mRecorder.setOnErrorListener(this::onMediaRecorderError);
             mRecorder.prepare();
             mRecorder.start();
 
@@ -365,8 +380,11 @@ public class AudioRecorder {
             }
 
             internalRelease();
+            mExecutor.shutdown();
 
             handleError(ErrorCode.MEDIA_RECORDER_ERROR, exception);
+
+            return;
         }
 
         mSegmentId++;
@@ -377,7 +395,17 @@ public class AudioRecorder {
         mMainThreadHandler.post(mListener::onRecordingStarted);
     }
 
-    private synchronized void internalStop() {
+    private synchronized void onMediaRecorderError(MediaRecorder mr, int what, int extra) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onMediaRecorderError, what=" + what + " extra=" + extra);
+        }
+
+        handleError(ErrorCode.MEDIA_RECORDER_ERROR, new Exception("MediaRecorder error: " + what + ", " + extra));
+
+        release();
+    }
+
+    private synchronized boolean internalStop() {
         if (DEBUG) {
             Log.d(LOG_TAG, "internalStop");
         }
@@ -386,7 +414,7 @@ public class AudioRecorder {
             if (DEBUG) {
                 Log.d(LOG_TAG, "not recording");
             }
-            return;
+            return true;
         }
 
         try {
@@ -394,12 +422,13 @@ public class AudioRecorder {
             internalRelease();
         } catch (Exception exception) {
             handleError(ErrorCode.MEDIA_RECORDER_ERROR, exception);
-            return;
+            return false;
+        } finally {
+            mIsRecording = false;
         }
 
-        mIsRecording = false;
-
         mMainThreadHandler.post(mListener::onRecordingStopped);
+        return true;
     }
 
     private synchronized void internalGetRecording() {
@@ -408,10 +437,9 @@ public class AudioRecorder {
         }
 
         if (mIsRecording) {
-            if (DEBUG) {
-                Log.d(LOG_TAG, "still recording");
+            if (!internalStop()) {
+                return;
             }
-            return;
         }
 
         if (mAudioSegments.isEmpty()) {
@@ -448,6 +476,8 @@ public class AudioRecorder {
             mMainThreadHandler.post(() -> mListener.onRecordingReady(mOutput));
             return;
         }
+
+        mMainThreadHandler.post(mListener::onRecordingProcessing);
 
         concatenateSegments();
     }
@@ -520,10 +550,16 @@ public class AudioRecorder {
 
     private synchronized void internalRelease() {
         if (DEBUG) {
-            Log.d(LOG_TAG, "releaseRecorder");
+            Log.d(LOG_TAG, "internalRelease");
         }
 
         if (mRecorder != null) {
+            try {
+                mRecorder.reset();
+            } catch (Exception e) {
+                // Reset can fail if the recorder is in an error state.
+                Log.e(LOG_TAG, "reset failed", e);
+            }
             mRecorder.release();
             mRecorder = null;
         }
@@ -544,6 +580,9 @@ public class AudioRecorder {
 
     @NonNull
     private String buildSegmentInfo() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "buildSegmentInfo");
+        }
 
         if (mAudioSegments.isEmpty()) {
             return "Segment info: no segment";
@@ -568,6 +607,10 @@ public class AudioRecorder {
     }
 
     private synchronized void cleanSegments() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "cleanSegments");
+        }
+
         for (File segment : mAudioSegments) {
             if (!segment.delete()) {
                 if (DEBUG) {

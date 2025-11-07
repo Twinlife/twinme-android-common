@@ -21,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.documentfile.provider.DocumentFile;
 
+import org.twinlife.twinlife.AssertPoint;
 import org.twinlife.twinme.NotificationCenter;
 import org.twinlife.twinlife.ConversationService.Descriptor;
 import org.twinlife.twinlife.JobService;
@@ -30,6 +31,7 @@ import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Contact;
 import org.twinlife.twinme.models.Group;
 import org.twinlife.twinme.models.Space;
+import org.twinlife.twinme.services.ServiceAssertPoint;
 import org.twinlife.twinme.ui.Intents;
 
 import java.io.OutputStream;
@@ -128,11 +130,15 @@ public class ExportService extends Service implements ExportObserver {
     @Nullable
     private TwinmeContext mTwinmeContext;
 
+    private long startTime = -1;
+
     @Override
     public void onCreate() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onCreate");
         }
+
+        startTime = -1;
 
         mLastMessage = 0;
         mLastProgress = 0;
@@ -237,6 +243,24 @@ public class ExportService extends Service implements ExportObserver {
         }
 
         super.onDestroy();
+    }
+
+    @Override
+    public void onTimeout(int startId, int fgsType) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onTimeout: startId=" + startId + " fgsType=" + fgsType);
+        }
+
+        if (mTwinmeContext != null) {
+            long duration = -1;
+            if (startTime != -1) {
+                duration = System.currentTimeMillis() - startTime;
+            }
+
+            mTwinmeContext.assertion(ServiceAssertPoint.SERVICE_TIMEOUT, AssertPoint.createLength(duration));
+        }
+
+        finish();
     }
 
     /**

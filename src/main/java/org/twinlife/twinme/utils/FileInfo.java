@@ -194,7 +194,11 @@ public class FileInfo implements Parcelable  {
             if (mMimeType == null) {
                 mMimeType = context.getContentResolver().getType(mUri);
                 if (mMimeType == null) {
-                    mMimeType = URLConnection.guessContentTypeFromName(mUri.getPath());
+                    try {
+                        mMimeType = URLConnection.guessContentTypeFromName(mUri.getPath());
+                    } catch (Exception ignored) {
+
+                    }
                 }
             }
         }
