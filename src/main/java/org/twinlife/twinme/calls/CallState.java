@@ -23,7 +23,6 @@ import org.twinlife.twinme.calls.keycheck.WordCheckResult;
 import org.twinlife.twinme.calls.streaming.StreamPlayer;
 import org.twinlife.twinme.models.CallReceiver;
 import org.twinlife.twinme.models.Capabilities;
-import org.twinlife.twinme.models.Group;
 import org.twinlife.twinme.models.Originator.Type;
 
 import android.content.ContentResolver;
@@ -1682,7 +1681,7 @@ public final class CallState extends DescriptorFactory {
             Log.d(LOG_TAG, "isTelecomSupported");
         }
 
-        return FeatureUtils.isTelecomSupported(getContext()) && !mTelecomFailed;
+        return FeatureUtils.isTelecomEnabled(getContext()) && !mTelecomFailed;
     }
 
     public boolean isIncoming() {

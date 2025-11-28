@@ -27,8 +27,6 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.provider.MediaStore;
-import android.telecom.PhoneAccountHandle;
-import android.telecom.TelecomManager;
 import android.util.Log;
 import android.view.KeyEvent;
 
@@ -613,12 +611,6 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
     private final AtomicBoolean mActivityStarted = new AtomicBoolean(false);
 
-    @Nullable
-    private TelecomManager mTelecomManager;
-
-    @Nullable
-    private PhoneAccountHandle mPhoneAccountHandle;
-
     /*
      * Track the last service types used to call startForeground(), to decide whether we need to call it again.
      */
@@ -772,7 +764,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             intent.putExtra(PARAM_GROUP_ID, ((GroupMember) contact).getGroup().getId());
         }
 
-        if (!callInProgress && FeatureUtils.isTelecomSupported(context) && TelecomUtils.addIncomingTelecomCall(context, peerConnectionId, contact, offer.video)) {
+        if (!callInProgress && FeatureUtils.isTelecomEnabled(context) && TelecomUtils.addIncomingTelecomCall(context, peerConnectionId, contact, offer.video)) {
             // Keep the intent to start CallService once Telecom gives us the go-ahead (see TelecomConnectionService.onCreateIncomingConnection()).
             synchronized (sLock) {
                 notificationInfo.startCallServiceIntent = intent;
@@ -1339,11 +1331,6 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         if (!mTwinmeContext.isConnected()) {
             mTwinmeContext.connect();
         }
-
-        if (FeatureUtils.isTelecomSupported(getApplicationContext())) {
-            mTelecomManager = getApplicationContext().getSystemService(TelecomManager.class);
-            mPhoneAccountHandle = TelecomUtils.getPhoneAccountHandle(getApplicationContext());
-        }
     }
 
     private synchronized boolean shouldCallStartForeground(@Nullable CallState call, int serviceTypes) {
@@ -1527,7 +1514,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
             return;
         }
-
+        
         mNotificationId = CALL_SERVICE_INCOMING_NOTIFICATION_ID;
 
         mServiceNotification = mNotificationCenter.createIncomingCallNotification(originator, avatar, initialStatus, call == null ? null : call.getId());
@@ -1579,7 +1566,6 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
             final Capabilities capabilities = originator.getIdentityCapabilities();
             Schedule schedule = capabilities.getSchedule();
-
             if (schedule != null && !schedule.isNowInRange()) {
                 callConnection.terminate(TerminateReason.SCHEDULE);
                 return;
@@ -2851,7 +2837,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
             Originator originator = callConnection.getOriginator();
 
-            if (FeatureUtils.isTelecomSupported(this) && originator != null) {
+            if (FeatureUtils.isTelecomEnabled(this) && originator != null) {
                 TelecomUtils.addOutgoingTelecomCall(this, originator, callState.getStatus(), callConnection);
             }
 

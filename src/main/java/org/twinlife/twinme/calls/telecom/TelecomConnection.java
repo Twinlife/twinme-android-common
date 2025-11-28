@@ -67,7 +67,6 @@ public class TelecomConnection extends Connection {
             Log.d(LOG_TAG, "onShowIncomingCallUi");
         }
 
-        setInitialized();
         setRinging();
 
         mListener.onConnectionShowUi(peerConnectionId);
@@ -104,6 +103,15 @@ public class TelecomConnection extends Connection {
         }
 
         mListener.onConnectionAnswer(peerConnectionId);
+    }
+
+    @Override
+    public void onSilence() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onSilence");
+        }
+
+        //TODO: called when the user tells us to stop playing the incoming ringtone using the power or volume button.
     }
 
     @Override

@@ -66,7 +66,7 @@ public class TelecomUtils {
             Log.d(LOG_TAG, "registerPhoneAccount: context=" + context);
         }
 
-        if (!FeatureUtils.isTelecomSupported(context)) {
+        if (!FeatureUtils.isTelecomEnabled(context)) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "Telecom not supported by this device, skipping registration");
             }
@@ -85,7 +85,7 @@ public class TelecomUtils {
             }
 
             PhoneAccount phoneAccount = PhoneAccount.builder(getPhoneAccountHandle(context), application.getApplicationName())
-                    .setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED)
+                    .setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED | PhoneAccount.CAPABILITY_VIDEO_CALLING)
                     .build();
 
             telecomManager.registerPhoneAccount(phoneAccount);
@@ -103,7 +103,7 @@ public class TelecomUtils {
 
         TelecomManager telecomManager = context.getSystemService(TelecomManager.class);
 
-        if (!FeatureUtils.isTelecomSupported(context) || telecomManager == null) {
+        if (!FeatureUtils.isTelecomEnabled(context) || telecomManager == null) {
             return false;
         }
 
@@ -114,6 +114,7 @@ public class TelecomUtils {
         incomingCallExtras.putSerializable(CallService.PARAM_PEER_CONNECTION_ID, peerConnectionId);
         incomingCallExtras.putString(TelecomConnectionService.PARAM_CALLER_DISPLAY_NAME, originator.getName());
         incomingCallExtras.putBoolean(TelecomConnectionService.PARAM_DISCREET_CONTACT, originator.getCapabilities().hasDiscreet());
+        incomingCallExtras.putBoolean(TelecomConnectionService.PARAM_VIDEO_ALLOWED, originator.getCapabilities().hasVideo());
 
         extras.putBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, incomingCallExtras);
 
@@ -134,7 +135,7 @@ public class TelecomUtils {
 
         TelecomManager telecomManager = context.getSystemService(TelecomManager.class);
 
-        if (FeatureUtils.isTelecomSupported(context) &&
+        if (FeatureUtils.isTelecomEnabled(context) &&
                 !callConnection.getCall().isOutgoingTelecomCallRegistered() &&
                 ActivityCompat.checkSelfPermission(context, Manifest.permission.MANAGE_OWN_CALLS) == PackageManager.PERMISSION_GRANTED) {
 
@@ -147,14 +148,15 @@ public class TelecomUtils {
             Bundle extras = new Bundle();
 
             extras.putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, getPhoneAccountHandle(context));
-            extras.putInt(TelecomManager.EXTRA_INCOMING_VIDEO_STATE, callStatus.isVideo() ? VideoProfile.STATE_BIDIRECTIONAL : VideoProfile.STATE_AUDIO_ONLY);
+            extras.putInt(TelecomManager.EXTRA_START_CALL_WITH_VIDEO_STATE, callStatus.isVideo() ? VideoProfile.STATE_BIDIRECTIONAL : VideoProfile.STATE_AUDIO_ONLY);
             extras.putBoolean(TelecomManager.EXTRA_START_CALL_WITH_SPEAKERPHONE, callStatus.isVideo());
 
             Bundle customExtras = new Bundle();
             customExtras.putSerializable(CallService.PARAM_CALL_ID, callConnection.getCall().getId());
             customExtras.putString(TelecomConnectionService.PARAM_CALLER_DISPLAY_NAME, originator.getName());
             customExtras.putSerializable(CallService.PARAM_PEER_CONNECTION_ID, callConnection.getPeerConnectionId());
-            customExtras.putSerializable(TelecomConnectionService.PARAM_DISCREET_CONTACT, originator.getCapabilities().hasDiscreet());
+            customExtras.putBoolean(TelecomConnectionService.PARAM_DISCREET_CONTACT, originator.getCapabilities().hasDiscreet());
+            customExtras.putBoolean(TelecomConnectionService.PARAM_VIDEO_ALLOWED, originator.getCapabilities().hasVideo());
 
             extras.putBundle(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, customExtras);
 

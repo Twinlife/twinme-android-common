@@ -396,6 +396,14 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     void hideGroupCallAnimation();
 
     //
+    // Use Telecom
+    //
+
+    boolean isTelecomEnable();
+
+    void setUseTelecom(boolean enable);
+
+    //
     // Onboarding
     //
 

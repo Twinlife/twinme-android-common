@@ -378,7 +378,7 @@ public class AdminService {
 
         if (mApplication instanceof Application) {
             Application app = (Application) mApplication;
-            if (FeatureUtils.isTelecomSupported(app)) {
+            if (FeatureUtils.isTelecomEnabled(app)) {
                 TelecomUtils.registerPhoneAccount(app);
             }
         } else {

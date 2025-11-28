@@ -61,6 +61,7 @@ public class TelecomConnectionService extends ConnectionService implements CallA
 
     static final String PARAM_CALLER_DISPLAY_NAME = "callerDisplayName";
     static final String PARAM_DISCREET_CONTACT = "discreetContact";
+    static final String PARAM_VIDEO_ALLOWED = "videoAllowed";
 
     @Nullable
     private static TelecomConnectionService INSTANCE = null;
@@ -171,6 +172,29 @@ public class TelecomConnectionService extends ConnectionService implements CallA
             mCallReceiver = null;
         }
 
+        DisconnectCause cause = new DisconnectCause(DisconnectCause.MISSED);
+
+        for (TelecomConnection connection : pendingConnections) {
+            if (DEBUG) {
+                Log.d(LOG_TAG, "Cleaning up pending connection " + connection.peerConnectionId);
+            }
+            connection.setDisconnected(cause);
+            connection.destroy();
+        }
+        pendingConnections.clear();
+
+        cause = new DisconnectCause(DisconnectCause.LOCAL);
+        for (List<TelecomConnection> connectionList : connectionsByCallId.values()) {
+            for (TelecomConnection connection : connectionList) {
+                if (DEBUG) {
+                    Log.d(LOG_TAG, "Cleaning up active connection " + connection.peerConnectionId);
+                }
+                connection.setDisconnected(cause);
+                connection.destroy();
+            }
+        }
+        connectionsByCallId.clear();
+
         INSTANCE = null;
 
         super.onDestroy();
@@ -182,7 +206,11 @@ public class TelecomConnectionService extends ConnectionService implements CallA
             Log.d(LOG_TAG, "onCreateOutgoingConnection: connectionManagerPhoneAccount=" + connectionManagerPhoneAccount + " request=" + request);
         }
 
-        return buildTelecomConnection(request, request.getExtras());
+        Connection connection = buildTelecomConnection(request);
+        if (connection != null) {
+            connection.setDialing();
+        }
+        return connection;
     }
 
     @Override
@@ -209,16 +237,10 @@ public class TelecomConnectionService extends ConnectionService implements CallA
             Log.d(LOG_TAG, "onCreateIncomingConnection: connectionManagerPhoneAccount=" + connectionManagerPhoneAccount + " request=" + request);
         }
 
-        Bundle extras = request.getExtras().getBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS);
-
-        if (extras == null) {
-            Log.e(LOG_TAG, "Extras don't contain " + TelecomManager.EXTRA_INCOMING_CALL_EXTRAS);
-            return null;
-        }
-
-        Connection connection = buildTelecomConnection(request, extras);
+        Connection connection = buildTelecomConnection(request);
 
         if (connection != null) {
+            connection.setRinging();
             CallService.startService(this);
         }
 
@@ -241,17 +263,35 @@ public class TelecomConnectionService extends ConnectionService implements CallA
     }
 
     @Nullable
-    private TelecomConnection buildTelecomConnection(@NonNull ConnectionRequest request, @NonNull Bundle extras) {
+    private TelecomConnection buildTelecomConnection(@NonNull ConnectionRequest request) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "buildTelecomConnection: request=" + request + " extras=" + extras);
+            Log.d(LOG_TAG, "buildTelecomConnection: request=" + request);
         }
 
-        UUID peerConnectionId = (UUID) extras.getSerializable(CallService.PARAM_PEER_CONNECTION_ID);
-        String callerDisplayName = extras.getString(PARAM_CALLER_DISPLAY_NAME, null); //TODO TEL: default value?
-        boolean discreet = extras.getBoolean(PARAM_DISCREET_CONTACT, false);
+        Bundle extras = request.getExtras();
+        if (extras == null) {
+            Log.e(LOG_TAG, "Request has no extras");
+            return null;
+        }
+
+        Bundle customExtras = request.getExtras().getBundle(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS);
+        if (customExtras == null && extras.containsKey(CallService.PARAM_PEER_CONNECTION_ID)) {
+            // For some reason incoming calls' custom extras are in a dedicated Bundle (EXTRA_INCOMING_CALL_EXTRAS),
+            // while outgoing calls' custom extras are merged into the request's extras.
+            customExtras = extras;
+        }
+
+        if (customExtras == null) {
+            Log.e(LOG_TAG, "Request don't contain our custom extras");
+            return null;
+        }
+
+        UUID peerConnectionId = (UUID) customExtras.getSerializable(CallService.PARAM_PEER_CONNECTION_ID);
+        String callerDisplayName = customExtras.getString(PARAM_CALLER_DISPLAY_NAME, null); //TODO TEL: default value?
+        boolean discreet = customExtras.getBoolean(PARAM_DISCREET_CONTACT, false);
         int videoState = VideoProfile.STATE_AUDIO_ONLY;
 
-        if (extras.getInt(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, -1) != -1) {
+        if (extras.getInt(TelecomManager.EXTRA_INCOMING_VIDEO_STATE, -1) != -1) {
             videoState = extras.getInt(TelecomManager.EXTRA_INCOMING_VIDEO_STATE);
         } else if (extras.getInt(TelecomManager.EXTRA_START_CALL_WITH_VIDEO_STATE, -1) != -1) {
             videoState = extras.getInt(TelecomManager.EXTRA_START_CALL_WITH_VIDEO_STATE);
@@ -264,7 +304,12 @@ public class TelecomConnectionService extends ConnectionService implements CallA
 
         TelecomConnection connection = new TelecomConnection(peerConnectionId, this);
 
-        connection.setConnectionCapabilities(Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD | Connection.CAPABILITY_MUTE | Connection.CAPABILITY_CAN_PAUSE_VIDEO);
+        int capabilities = Connection.CAPABILITY_HOLD | Connection.CAPABILITY_SUPPORT_HOLD | Connection.CAPABILITY_MUTE | Connection.CAPABILITY_CAN_PAUSE_VIDEO;
+
+        if (customExtras.getBoolean(PARAM_VIDEO_ALLOWED, false)) {
+            capabilities |= Connection.CAPABILITY_SUPPORTS_VT_LOCAL_BIDIRECTIONAL | Connection.CAPABILITY_SUPPORTS_VT_REMOTE_BIDIRECTIONAL;
+        }
+        connection.setConnectionCapabilities(capabilities);
         connection.setConnectionProperties(Connection.PROPERTY_SELF_MANAGED);
 
         connection.setCallerDisplayName(callerDisplayName, discreet ? TelecomManager.PRESENTATION_UNKNOWN : TelecomManager.PRESENTATION_ALLOWED);
@@ -272,7 +317,7 @@ public class TelecomConnectionService extends ConnectionService implements CallA
         connection.setVideoState(videoState);
         connection.setAudioModeIsVoip(true);
         connection.setExtras(request.getExtras());
-        connection.setInitializing();
+        connection.setInitialized();
 
         UUID callId = (UUID) request.getExtras().getSerializable(CallService.PARAM_CALL_ID);
         if (callId != null) {

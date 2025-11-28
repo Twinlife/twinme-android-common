@@ -808,7 +808,7 @@ public class CommonUtils {
 
         String formatTime;
         if (DateFormat.is24HourFormat(context)) {
-            formatTime = "kk:mm";
+            formatTime = "HH:mm";
         } else {
             formatTime = "hh:mm a";
         }
@@ -896,7 +896,7 @@ public class CommonUtils {
         String format = "dd/MM/yyyy";
         if (DateUtils.isToday(timestamp)) {
             if (DateFormat.is24HourFormat(context)) {
-                format = "kk:mm";
+                format = "HH:mm";
             } else {
                 format = "hh:mm a";
             }
@@ -936,7 +936,7 @@ public class CommonUtils {
 
         String formatTime;
         if (DateFormat.is24HourFormat(context)) {
-            formatTime = "kk:mm";
+            formatTime = "HH:mm";
         } else {
             formatTime = "hh:mm a";
         }

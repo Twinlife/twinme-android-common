@@ -52,13 +52,22 @@ public class FeatureUtils {
             Arrays.asList("realme", "oppo", "oneplus");
 
     @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
+    public static boolean isTelecomEnabled(@NonNull Context context) {
+        TwinmeApplicationImpl twinmeApplication = TwinmeApplicationImpl.getInstance(context);
+        boolean telecomEnabled = twinmeApplication != null && twinmeApplication.isTelecomEnable();
+
+        return isTelecomSupported(context)
+                && telecomEnabled;
+    }
+
+    @ChecksSdkIntAtLeast(api = Build.VERSION_CODES.P)
     public static boolean isTelecomSupported(@NonNull Context context) {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE // Android 14
-                && hasSystemFeature(context)
+                && hasTelecomSystemFeature(context)
                 && isDeviceModelSupported();
     }
 
-    private static boolean hasSystemFeature(@NonNull Context context) {
+    private static boolean hasTelecomSystemFeature(@NonNull Context context) {
         final PackageManager packageManager = context.getPackageManager();
 
         // No mobile capability => most likely a tablet, with a poor Telecom implementation,

@@ -398,24 +398,20 @@ public class InvitationRoomService extends AbstractTwinmeService {
             if ((mState & FIND_CONTACTS) == 0) {
                 mState |= FIND_CONTACTS;
 
-                /* TwinmeContext.Predicate<Contact> filter = (Contact contact) -> {
-                    if (contact.getName() == null) {
-                        return false;
-                    }
-                    String contactName = normalize(contact.getName());
-                    return mTwinmeContext.isCurrentSpace(contact) && contactName.contains(mFindName) && !contact.isTwinroom() && contact.hasPeer();
-                };*/
                 final Filter<RepositoryObject> filter = new Filter<RepositoryObject>(mSpace) {
+                    @Override
                     public boolean accept(@NonNull RepositoryObject object) {
+
                         if (!(object instanceof Contact)) {
                             return false;
                         }
 
                         final Contact contact = (Contact) object;
-                        return !contact.isTwinroom() && contact.hasPeer();
+                        String contactName = normalize(object.getName());
+                        return !contact.isTwinroom() && contact.hasPeer() && contactName.contains(mFindName);
                     }
                 };
-                filter.withName(mFindName);
+                
                 mTwinmeContext.findContacts(filter, (List<Contact> contacts) -> {
                     runOnUiThread(() -> {
                         if (mObserver != null) {
