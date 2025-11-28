@@ -3236,11 +3236,15 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             stopRingtone();
             if (!call.isConnected() || terminateReason == TerminateReason.TRANSFER_DONE) {
                 finish();
-            } else {
+            } else if (!mExecutor.isTerminated() && !mExecutor.isShutdown()) {
                 // Play the end ringtone on the internal speaker.
                 uiThreadHandler.post(() -> {
-                    setSpeaker(false, false);
-                    mExecutor.execute(() -> startRingtone(RingtoneSoundType.RINGTONE_END));
+                    // The executor could have been released when the CallService is destroyed and the UI thread
+                    // was slow to process the handlers.
+                    if (!mExecutor.isTerminated() && !mExecutor.isShutdown()) {
+                        setSpeaker(false, false);
+                        mExecutor.execute(() -> startRingtone(RingtoneSoundType.RINGTONE_END));
+                    }
                 });
                 if (mShutdownTimer != null) {
                     mShutdownTimer.cancel(false);

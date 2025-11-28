@@ -34,6 +34,8 @@ public class ProxyService extends AbstractTwinmeService {
 
         void onDeleteProxy(@NonNull ProxyDescriptor proxyDescriptor);
 
+        void onGetProxyUri(@Nullable TwincodeURI twincodeURI, @NonNull ProxyDescriptor proxyDescriptor);
+
         void onErrorAddProxy();
 
         void onErrorAlreadyUsed();
@@ -58,6 +60,19 @@ public class ProxyService extends AbstractTwinmeService {
         mTwinmeContext.setObserver(mTwinmeContextObserver);
     }
 
+    public void getProxyURI(@NonNull ProxyDescriptor proxyDescriptor) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "getProxyURI: " + proxyDescriptor);
+        }
+
+        Uri proxyURI = Uri.parse(proxyDescriptor.getDescriptor());
+        parseURI(proxyURI, (errorCode, twincodeURI) -> {
+            if (mObserver != null) {
+                mObserver.onGetProxyUri(twincodeURI, proxyDescriptor);
+            }
+        });
+    }
+
     public void verifyProxyURI(@NonNull Uri proxyUri, int position) {
         if (DEBUG) {
             Log.d(LOG_TAG, "verifyProxyURI: proxyUri=" + proxyUri);
@@ -76,6 +91,10 @@ public class ProxyService extends AbstractTwinmeService {
             List<ProxyDescriptor> proxies = mTwinmeContext.getConnectivityService().getUserProxies();
             proxies.remove(proxyDescriptor);
             mTwinmeContext.getConnectivityService().setUserProxies(proxies);
+
+            if (proxies.isEmpty()) {
+                mTwinmeContext.getConnectivityService().setUserProxyEnabled(false);
+            }
 
             runOnUiThread(() -> {
                 if (mObserver != null) {
