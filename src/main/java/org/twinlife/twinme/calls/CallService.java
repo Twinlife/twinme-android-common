@@ -1460,7 +1460,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         }
 
         if (originator == null) {
-            mTwinmeContext.assertion(CallAssertPoint.NO_NOTIFICATION_INFO, AssertPoint.create(getClass()));
+            mTwinmeContext.assertion(CallAssertPoint.NO_NOTIFICATION_INFO, AssertPoint.create(getClass()).putPeerConnectionId(peerConnectionId).put(callStatus));
             return;
         }
 

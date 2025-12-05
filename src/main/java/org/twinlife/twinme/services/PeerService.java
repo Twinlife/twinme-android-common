@@ -247,7 +247,7 @@ public class PeerService extends Service implements JobService.Observer {
         }
 
         if (mJobService != null) {
-            mJobService.startForegroundService(priority, originalPriority, sentTime, this::onServiceExpire, SERVICE_DELAY_MS);
+            mExpire = mJobService.startForegroundService(priority, originalPriority, sentTime, this::onServiceExpire, SERVICE_DELAY_MS);
         }
 
         if (mTwinmeContext != null) {
@@ -275,7 +275,6 @@ public class PeerService extends Service implements JobService.Observer {
 
         EventMonitor.event("Foreground service is finished");
 
-        mExpire = null;
         finish();
     }
 
