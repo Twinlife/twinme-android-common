@@ -110,7 +110,7 @@ public class AudioTrackLoader<T> implements Loader<T> {
         File file = new File(filesDir, audioDescriptor.getPath());
 
         AudioTrack audioTrack = new AudioTrack();
-        audioTrack.initTrack(file.getPath(), mNbLines);
+        audioTrack.initTrack(file.getPath(), mNbLines, context);
 
         // Update the audio track member only when we have finished.
         mAudioTrack = audioTrack;

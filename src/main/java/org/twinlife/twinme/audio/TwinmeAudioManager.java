@@ -682,14 +682,16 @@ public class TwinmeAudioManager implements CallAudioManager {
             Log.d(LOG_TAG, "setCommunicationDevice: device=" + device);
         }
 
+        // Important note: record the selected device before changing it because a recursion exists
+        // with setSpeakerphoneOn() -> updateAudioDeviceState() -> setCommunicationDevice()
+        //     -> internalSetCommunicationDeviceLegacy() -> setSpeakerphoneOn()
+        selectedAudioDevice = device;
+        userSelectedAudioDevice = device;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             internalSetCommunicationDevice(device);
         } else {
             internalSetCommunicationDeviceLegacy(device);
         }
-
-        selectedAudioDevice = device;
-        userSelectedAudioDevice = device;
     }
 
     private void internalSetCommunicationDeviceLegacy(@NonNull AudioDevice device) {

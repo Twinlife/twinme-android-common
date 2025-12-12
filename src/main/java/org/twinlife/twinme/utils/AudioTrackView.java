@@ -36,8 +36,8 @@ public class AudioTrackView extends View {
 
     private final static int BYTES_IN_FLOAT = Float.SIZE / Byte.SIZE;
 
-    private static final float DESIGN_LINE_SPACE = 4f;
-    private static final float DESIGN_LINE_WIDTH = 3f;
+    public final static int AUDIO_TRACK_LINE_SPACE = 8;
+    public final static int AUDIO_TRACK_LINE_WIDTH = 4;
 
     private static final int FADE_IN_DURATION_MS = 300; // Duration for the fade-in animation
 
@@ -185,11 +185,15 @@ public class AudioTrackView extends View {
         final int width = mWidth;
         final int height = mHeight;
 
+        int lineWidth = (int) (AudioTrackView.AUDIO_TRACK_LINE_WIDTH * getContext().getResources().getDisplayMetrics().density);
+        int lineSpace = (int) (AudioTrackView.AUDIO_TRACK_LINE_SPACE * getContext().getResources().getDisplayMetrics().density);
+
         mBitmapAlpha = 0; // Reset alpha for new bitmap, ensure it starts transparent
         mPaint.setAlpha(mBitmapAlpha);
         mPaint.setStyle(Paint.Style.STROKE);
-        mPaint.setStrokeWidth(DESIGN_LINE_WIDTH);
+        mPaint.setStrokeWidth(lineWidth);
         mPaint.setStrokeJoin(Paint.Join.ROUND);
+        mPaint.setStrokeCap(Paint.Cap.ROUND);
         mPaint.setColor(mBackgroundColor);
         final Paint paint = new Paint(mPaint);
 
@@ -199,11 +203,12 @@ public class AudioTrackView extends View {
                     Bitmap trackBitmap = Bitmap.createBitmap(width, height, conf);
                     Canvas canvasTrack = new Canvas(trackBitmap);
 
-                    float startX = 1;
+                    float startX = lineWidth * 0.5f;
+                    float originalHeight = height - lineWidth;
 
                     float[] linesValue = toFloatArray(audioTrack.getBytes());
                     for (float lineByte : linesValue) {
-                        float lineHeight = lineByte * height;
+                        float lineHeight = lineByte * originalHeight;
                         if (lineHeight <= 1.0) {
                             lineHeight = 1;
                         } else if (lineHeight > height) {
@@ -211,7 +216,7 @@ public class AudioTrackView extends View {
                         }
                         float startY = (height - lineHeight) / 2;
                         canvasTrack.drawLine(startX, startY, startX, startY + lineHeight, paint);
-                        startX += DESIGN_LINE_SPACE;
+                        startX += lineSpace;
                     }
 
                     MAIN_THREAD_HANDLER.post(() -> {

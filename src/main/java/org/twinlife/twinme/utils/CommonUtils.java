@@ -28,6 +28,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
 import android.text.format.DateFormat;
@@ -885,7 +886,7 @@ public class CommonUtils {
         return rotation;
     }
 
-    public static String formatTimeInterval(Context context, long timestamp) {
+    public static String formatTimeInterval(@Nullable Context context, long timestamp) {
 
         Date date = new Date(timestamp);
         Date now = new Date();
@@ -895,7 +896,7 @@ public class CommonUtils {
 
         String format = "dd/MM/yyyy";
         if (DateUtils.isToday(timestamp)) {
-            if (DateFormat.is24HourFormat(context)) {
+            if (context == null || DateFormat.is24HourFormat(context)) {
                 format = "HH:mm";
             } else {
                 format = "hh:mm a";
@@ -911,7 +912,7 @@ public class CommonUtils {
         return simpleDateFormat.format(date);
     }
 
-    public static String formatCallTimeInterval(Context context, long timestamp) {
+    public static String formatCallTimeInterval(@Nullable Context context, long timestamp) {
 
         Date date = new Date(timestamp);
         Date now = new Date();
@@ -935,7 +936,7 @@ public class CommonUtils {
         }
 
         String formatTime;
-        if (DateFormat.is24HourFormat(context)) {
+        if (context == null || DateFormat.is24HourFormat(context)) {
             formatTime = "HH:mm";
         } else {
             formatTime = "hh:mm a";
@@ -1123,6 +1124,13 @@ public class CommonUtils {
     public static boolean isGooglePlayServicesAvailable(Context context) {
 
         return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS;
+    }
+
+    public static boolean isRotationLocked(Context context) {
+
+        int rotation = Settings.System.getInt(context.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 1);
+
+        return rotation == 0;
     }
 
     private static int getOffset(Range range, List<Range> ranges) {

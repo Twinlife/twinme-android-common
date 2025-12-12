@@ -186,6 +186,17 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
     }
 
     /**
+     * Allocate a VoIP lock to tell the service a VoIP call is in progress and we must not disconnect
+     * while we are in background.
+     * @return the VoIP lock instance.
+     */
+    @NonNull
+    public JobService.VoIPLock allocateVoIPLock() {
+
+        return mJobService.allocateVoIPLock();
+    }
+
+    /**
      * Allocate a processing lock to tell the system we need the CPU.
      * <p>
      * When the processing lock is not needed anymore, its `release` operation must be called.

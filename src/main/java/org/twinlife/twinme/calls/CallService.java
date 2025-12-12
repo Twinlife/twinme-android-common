@@ -569,6 +569,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
     private ScheduledFuture<?> mShutdownTimer;
     private JobService.ProcessingLock mProcessingLock;
     private JobService.NetworkLock mNetworkLock;
+    private JobService.VoIPLock mVoIPLock;
 
     @SuppressLint("UseSparseArrays")
     private final Map<Long, ConnectionOperation> mConnectionRequestIds = new HashMap<>();
@@ -1286,6 +1287,10 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         if (mProcessingLock != null) {
             mProcessingLock.release();
         }
+
+        if (mVoIPLock != null) {
+            mVoIPLock.release();
+        }
     }
 
     private void initialize() {
@@ -1312,6 +1317,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
         // We also need the network for the lifetime of this service.
         mNetworkLock = mTwinmeApplication.allocateNetworkLock();
+        mVoIPLock = mTwinmeApplication.allocateVoIPLock();
 
         mNotificationCenter = mTwinmeContext.getNotificationCenter();
         mServiceNotification = mNotificationCenter.getPlaceholderCallNotification();

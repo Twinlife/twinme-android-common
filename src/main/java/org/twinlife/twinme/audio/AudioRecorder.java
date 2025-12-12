@@ -270,11 +270,16 @@ public class AudioRecorder {
     }
 
     public void start() {
-        mExecutor.execute(this::internalStart);
+        // Be careful that even for start(), the executor could have been shutdown.
+        if (!mExecutor.isShutdown()) {
+            mExecutor.execute(this::internalStart);
+        }
     }
 
     public void stop() {
-        mExecutor.execute(this::internalStop);
+        if (!mExecutor.isShutdown()) {
+            mExecutor.execute(this::internalStop);
+        }
     }
 
     @UiThread
@@ -320,7 +325,9 @@ public class AudioRecorder {
         if (mPlayer != null) {
             mPlayer.stopPlayback();
         }
-        mExecutor.execute(this::internalGetRecording);
+        if (!mExecutor.isShutdown()) {
+            mExecutor.execute(this::internalGetRecording);
+        }
     }
 
     public synchronized long getDuration() {

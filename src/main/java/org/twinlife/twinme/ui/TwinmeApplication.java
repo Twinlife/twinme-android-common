@@ -284,6 +284,14 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     boolean askCallQualityWithCallDuration(long duration);
 
     //
+    // Conversation Management
+    //
+
+    float audioItemPlaybackSpeed();
+
+    void updateAudioItemPlaybackSpeed();
+
+    //
     //  App Info Management
     //
 
