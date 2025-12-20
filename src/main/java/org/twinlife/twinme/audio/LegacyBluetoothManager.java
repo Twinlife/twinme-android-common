@@ -72,7 +72,7 @@ public class LegacyBluetoothManager implements BluetoothManager {
     private final Handler handler;
 
     private int scoConnectionAttempts;
-    private State bluetoothState;
+    private volatile State bluetoothState;
     private int currentProfileConnectionState;
     private long bluetoothAudioDisconnectTime;
     private final BluetoothProfile.ServiceListener bluetoothServiceListener;
@@ -259,7 +259,6 @@ public class LegacyBluetoothManager implements BluetoothManager {
      * Returns the internal state.
      */
     public State getState() {
-        ThreadUtils.checkIsOnMainThread();
         return bluetoothState;
     }
 

@@ -2847,8 +2847,8 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
                 TelecomUtils.addOutgoingTelecomCall(this, originator, callState.getStatus(), callConnection);
             }
 
-        } else {
-            callState.remove(callConnection, TerminateReason.fromErrorCode(errorCode));
+        } else if (callState.remove(callConnection, TerminateReason.fromErrorCode(errorCode))) {
+            terminateCall(callState,  TerminateReason.fromErrorCode(errorCode), callState.getStatus());
         }
 
         sendMessage(MESSAGE_CREATE_OUTGOING_CALL);
