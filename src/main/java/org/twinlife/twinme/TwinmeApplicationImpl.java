@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2025 twinlife SA.
+ *  Copyright (c) 2016-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -40,6 +40,7 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
 
     private volatile boolean mRunning = false;
     private TwinmeConfiguration mTwinmeConfiguration;
+    @Nullable
     private TwinmeContext mTwinmeContext;
     private AndroidJobServiceImpl mJobService;
     private TwinlifeServiceConnectionImpl mTwinlifeServiceConnectionImpl;
@@ -231,7 +232,7 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
     @Override
     public boolean isFeatureSubscribed(@NonNull Feature feature) {
 
-        if (feature == Feature.GROUP_CALL) {
+        if (feature == Feature.GROUP_CALL && mTwinmeContext != null) {
             return mTwinmeContext.getAccountService().isFeatureSubscribed("group-call");
 
         } else {
@@ -250,7 +251,7 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
             try {
                 // Deobfuscate and read the app configuration.
                 if (configStream != null) {
-                    byte[] data = new byte[1024];
+                    byte[] data = new byte[4096];
                     int length = configStream.read(data);
                     data = TwinlifeServiceConnectionImpl.decrypt(data, length);
 

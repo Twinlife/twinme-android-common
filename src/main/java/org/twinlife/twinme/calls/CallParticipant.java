@@ -102,6 +102,8 @@ public final class CallParticipant implements RendererCommon.RendererEvents {
     private volatile int mRemoteCameraBitmap;
     private volatile int mRemoteActiveCamera;
 
+    private volatile boolean mWaitingForCameraControlAnswer;
+
     @Nullable
     private CallParticipantListener mCallParticipantListener;
 
@@ -223,6 +225,17 @@ public final class CallParticipant implements RendererCommon.RendererEvents {
 
         return mIsScreenSharing;
     }
+
+    /**
+     * Returns true if user ask for camera control and waiting for peer response.
+     *
+     * @return true if user ask for camera control and waiting for peer response.
+     */
+    public boolean isWaitingForCameraControlAnswer() {
+
+        return mWaitingForCameraControlAnswer;
+    }
+
 
     /**
      * Get the participant name (it could come from the Contact but also provided by other means for group calls).
@@ -348,6 +361,7 @@ public final class CallParticipant implements RendererCommon.RendererEvents {
      */
     public void remoteAskControl() {
 
+        mWaitingForCameraControlAnswer = true;
         mConnection.sendCameraControl(CameraControlIQ.Mode.CHECK, 0, 0);
     }
 
@@ -465,6 +479,7 @@ public final class CallParticipant implements RendererCommon.RendererEvents {
 
     void setRemoteControl(int allowedCamera, int activeCamera) {
 
+        mWaitingForCameraControlAnswer = false;
         mRemoteCameraBitmap = allowedCamera;
         mRemoteActiveCamera = activeCamera;
     }

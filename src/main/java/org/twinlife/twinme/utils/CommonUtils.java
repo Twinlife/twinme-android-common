@@ -793,8 +793,8 @@ public class CommonUtils {
 
             long milliSeconds1 = calendar1.getTimeInMillis();
             long milliSeconds2 = calendar2.getTimeInMillis();
-            long elapsedTime = (milliSeconds2 - milliSeconds1) / 1000;
-
+            long elapsedTime = (milliSeconds1 - milliSeconds2) / 1000;
+            
             if (elapsedTime > ONE_YEAR) {
                 formatDate = "EEE dd MMM yyyy";
             } else {

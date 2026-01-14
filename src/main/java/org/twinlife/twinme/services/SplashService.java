@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020-2024 twinlife SA.
+ *  Copyright (c) 2020-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -89,7 +89,6 @@ public class SplashService extends AbstractTwinmeService {
     private UUID mActiveDeviceMigrationId;
     private boolean mHasProfiles;
     private boolean mHasContacts;
-    private Space mSpace;
 
     public SplashService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
@@ -127,10 +126,14 @@ public class SplashService extends AbstractTwinmeService {
 
         mActiveDeviceMigrationId = mTwinmeContext.getAccountMigrationService().getActiveDeviceMigrationId();
         runOnUiThread(() -> {
-            if (mActiveDeviceMigrationId != null && mObserver != null) {
-                mObserver.onState(TwinmeApplication.State.MIGRATION);
-            } else if (mTwinmeContext.isDatabaseUpgraded() && mObserver != null) {
-                mObserver.onState(TwinmeApplication.State.UPGRADING);
+            if (mObserver != null) {
+                if (mActiveDeviceMigrationId != null) {
+                    mObserver.onState(TwinmeApplication.State.MIGRATION);
+                } else if (mTwinmeContext.isDatabaseUpgraded()) {
+                    mObserver.onState(TwinmeApplication.State.UPGRADING);
+                } else {
+                    mObserver.onState(TwinmeApplication.State.STARTING);
+                }
             }
         });
     }
@@ -193,7 +196,7 @@ public class SplashService extends AbstractTwinmeService {
         if ((mState & GET_CONTACTS) == 0) {
             mState |= GET_CONTACTS;
 
-            final Filter<RepositoryObject> filter = new Filter<>(mSpace);
+            final Filter<RepositoryObject> filter = new Filter<>(null);
             mTwinmeContext.findContacts(filter, (List<Contact> contacts) -> {
                 mState |= GET_CONTACTS_DONE;
                 mHasContacts = !contacts.isEmpty();
@@ -212,7 +215,7 @@ public class SplashService extends AbstractTwinmeService {
         if ((mState & GET_CONVERSATIONS) == 0) {
             mState |= GET_CONVERSATIONS;
 
-            Filter<ConversationService.Conversation> filter = new Filter<>(mSpace);
+            Filter<ConversationService.Conversation> filter = new Filter<>(null);
             mTwinmeContext.findConversations(filter, (List<ConversationService.Conversation> conversations) -> {
                 runOnUiThread(() -> {
                     if (mObserver != null) {

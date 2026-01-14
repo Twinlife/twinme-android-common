@@ -90,14 +90,8 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
         OFF
     }
 
-    enum SendImageSize {
-        SMALL,
-        MEDIUM,
-        ORIGINAL
-    }
-
-    enum SendVideoSize {
-        LOWER,
+    enum QualityMedia {
+        STANDARD,
         ORIGINAL
     }
 
@@ -220,13 +214,9 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
 
     Uri defaultUriToSaveFiles();
 
-    int sendImageSize();
+    int qualityMedia();
 
-    void setSendImageSize(SendImageSize sendImageSize);
-
-    int sendVideoSize();
-
-    void setSendVideoSize(SendVideoSize sendVideoSize);
+    void setQualityMedia(QualityMedia qualityMedia);
 
     //
     // Privacy Management

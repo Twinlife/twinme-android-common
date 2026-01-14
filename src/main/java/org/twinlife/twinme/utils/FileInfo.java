@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2025 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -16,6 +16,8 @@ import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.provider.DocumentsContract;
@@ -25,9 +27,19 @@ import android.webkit.MimeTypeMap;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.media3.common.MediaItem;
+import androidx.media3.common.MimeTypes;
+import androidx.media3.common.util.UnstableApi;
+import androidx.media3.transformer.Composition;
+import androidx.media3.transformer.EditedMediaItem;
+import androidx.media3.transformer.Effects;
+import androidx.media3.transformer.ExportException;
+import androidx.media3.transformer.ExportResult;
+import androidx.media3.transformer.Transformer;
 
 import org.twinlife.twinlife.BaseService;
 import org.twinlife.twinlife.util.Logger;
+import org.twinlife.twinlife.util.Utils;
 import org.twinlife.twinme.ui.TwinmeApplication;
 
 import java.io.ByteArrayOutputStream;
@@ -46,9 +58,13 @@ public class FileInfo implements Parcelable  {
     private static final String LOG_TAG = "MediaInfo";
     private static final boolean DEBUG = false;
 
-    public static final int MINIMAL_RESOLUTION = 640;
+    public static final int STANDARD_VIDEO_RESOLUTION = 720;
     public static final int STANDARD_RESOLUTION = 1600;
     public static final int MAX_COMPRESSION = 80;
+
+    public interface ReduceVideoObserver {
+        void onReduceVideoFinish(@Nullable File file);
+    }
 
     @NonNull
     private final Uri mUri;
@@ -251,6 +267,11 @@ public class FileInfo implements Parcelable  {
         return mMimeType != null && mMimeType.equals("image/gif");
     }
 
+    public boolean isPNG() {
+
+        return mMimeType != null && mMimeType.equals("image/png");
+    }
+
     public boolean isVideo() {
 
         return mMimeType != null && mMimeType.startsWith("video");
@@ -273,32 +294,42 @@ public class FileInfo implements Parcelable  {
 
     public void getVideoSize() {
 
-        MediaMetadataRetriever retriever = null;
-        try {
-            retriever = new MediaMetadataRetriever();
+        int width = 0;
+        int height = 0;
+        try (MediaMetadataRetriever retriever = new MediaMetadataRetriever()) {
             retriever.setDataSource(mPath);
             String value = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH);
-            mVideoWidth = 0;
+
             if (value != null) {
-                mVideoWidth = Integer.parseInt(value);
+                width = Integer.parseInt(value);
             }
             value = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT);
-            mVideoHeight = 0;
+
             if (value != null) {
-                mVideoHeight = Integer.parseInt(value);
+                height = Integer.parseInt(value);
+            }
+
+            value = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
+
+            if (value != null) {
+                int rotationValue = Integer.parseInt(value);
+
+                if (rotationValue == 90 || rotationValue == 270) {
+                    mVideoWidth = height;
+                    mVideoHeight = width;
+                } else {
+                    mVideoWidth = width;
+                    mVideoHeight = height;
+                }
+            } else {
+                mVideoWidth = width;
+                mVideoHeight = height;
             }
         } catch (Exception ex) {
             if (Logger.ERROR) {
                 Logger.error(LOG_TAG, "Cannot save video: ", ex);
             }
 
-            if (retriever != null) {
-                try {
-                    retriever.close();
-                } catch (Exception ignored) {
-
-                }
-            }
         }
     }
 
@@ -307,14 +338,9 @@ public class FileInfo implements Parcelable  {
 
         File file = null;
         try {
-            if (isImage() && sendImageSize != TwinmeApplication.SendImageSize.ORIGINAL.ordinal()) {
+            if (isImage() && sendImageSize != TwinmeApplication.QualityMedia.ORIGINAL.ordinal() && !isGIF()) {
                 file = File.createTempFile("image", ".jpg", context.getCacheDir());
-                int maxSize;
-                if (sendImageSize == TwinmeApplication.SendImageSize.MEDIUM.ordinal()) {
-                    maxSize = STANDARD_RESOLUTION;
-                } else {
-                    maxSize = MINIMAL_RESOLUTION;
-                }
+                int maxSize = STANDARD_RESOLUTION;
 
                 ResizeBitmap resizeBitmap = null;
                 if (getPath() != null && isFile()) {
@@ -344,7 +370,7 @@ public class FileInfo implements Parcelable  {
                 }
             }
 
-            file = File.createTempFile("media", isImage() ? ".jpg" : ".mp4", context.getCacheDir());
+            file = File.createTempFile("media", getExtension(), context.getCacheDir());
             BaseService.ErrorCode errorCode = CommonUtils.copyUriToFile(context.getContentResolver(), getUri(), file);
             if (errorCode == BaseService.ErrorCode.SUCCESS) {
                 return new FileInfo(this, file);
@@ -357,6 +383,28 @@ public class FileInfo implements Parcelable  {
             }
         }
         return null;
+    }
+
+    @NonNull
+    private String getExtension() {
+
+        if (isImage()) {
+            if (isGIF()) {
+                return ".gif";
+            }
+            if (isPNG()) {
+                return ".png";
+            }
+            return ".jpg";
+        }
+        return ".mp4";
+    }
+
+    public void removeFile() {
+
+        if (mPath != null) {
+            Utils.deleteFile(LOG_TAG, new File(mPath));
+        }
     }
 
     @Nullable
@@ -391,6 +439,67 @@ public class FileInfo implements Parcelable  {
             }
         }
         return null;
+    }
+
+    @UnstableApi
+    public void reduceVideo(@NonNull Context context, @NonNull ReduceVideoObserver saveVideoObserver) {
+
+        Handler handler = new Handler(Looper.getMainLooper());
+        handler.post(() -> {
+
+            String outputPath = null;
+            try {
+                File file = File.createTempFile("media", ".mp4", context.getCacheDir());
+                outputPath = file.getPath();
+                Transformer.Listener transformerListener = new Transformer.Listener() {
+                    @Override
+                    public void onCompleted(@Nullable Composition composition, @Nullable ExportResult exportResult) {
+
+                        saveVideoObserver.onReduceVideoFinish(file);
+                    }
+
+                    @Override
+                    public void onError(@Nullable Composition composition, @Nullable ExportResult exportResult, @Nullable ExportException exportException) {
+
+                        saveVideoObserver.onReduceVideoFinish(null);
+                    }
+                };
+
+                Transformer transformer = new Transformer.Builder(context)
+                        .setVideoMimeType(MimeTypes.VIDEO_H264)
+                        .setAudioMimeType(MimeTypes.AUDIO_AAC)
+                        .addListener(transformerListener)
+                        .build();
+
+                int videoHeight;
+                if (mVideoHeight == 0) {
+                    videoHeight = STANDARD_VIDEO_RESOLUTION;
+                } else {
+                    videoHeight = (int) (mVideoHeight * 0.5);
+                }
+
+                Effects effects = new Effects(
+                        com.google.common.collect.ImmutableList.of(),
+                        com.google.common.collect.ImmutableList.of(androidx.media3.effect.Presentation.createForHeight(videoHeight))
+                );
+
+                EditedMediaItem mediaItem = new EditedMediaItem.Builder(MediaItem.fromUri(mUri))
+                        .setEffects(effects)
+                        .build();
+                transformer.start(mediaItem, outputPath);
+
+            } catch (Exception exception) {
+                Log.e(LOG_TAG, "exception = ", exception);
+                if (outputPath != null) {
+                    File file = new File(outputPath);
+                    if (!file.delete()) {
+                        Log.w(LOG_TAG, "Cannot remove file");
+                    }
+                }
+
+                saveVideoObserver.onReduceVideoFinish(null);
+            }
+        });
     }
 
     public static final Creator<FileInfo> CREATOR = new Creator<FileInfo>() {

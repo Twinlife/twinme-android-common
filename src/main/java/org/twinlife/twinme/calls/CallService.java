@@ -2026,7 +2026,19 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             Log.d(LOG_TAG, "onActionSwitchCall intent=" + intent);
         }
 
-        switchCall();
+        final CallState call = mHoldCall != null ? mHoldCall : mActiveCall;
+        if (call == null) {
+            return;
+        }
+
+        // If the call on hold was not accepted, before switching to it we must accept it.
+        // (occurs when the user switches to the hold call from the UI and not from the Android notification).
+        final CallStatus mode = call.getStatus();
+        if (CallStatus.isIncoming(mode)) {
+            onActionAcceptCall(intent);
+        } else {
+            switchCall();
+        }
     }
 
     private synchronized void onActionHoldCall(@NonNull Intent intent) {
