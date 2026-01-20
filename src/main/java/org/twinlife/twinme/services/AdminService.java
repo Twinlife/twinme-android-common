@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2025 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -439,7 +439,11 @@ public class AdminService {
         }
 
         Utils.cleanupTemporaryDirectory(mApplication.getCacheDir());
-        final File dir = new File(mApplication.getFilesDir(), Twinlife.OLD_TMP_DIR);
+        File dir = new File(mApplication.getFilesDir(), Twinlife.OLD_TMP_DIR);
+        if (dir.exists()) {
+            Utils.cleanupTemporaryDirectory(dir);
+        }
+        dir = new File(mApplication.getFilesDir(), Twinlife.TMP_DIR);
         if (dir.exists()) {
             Utils.cleanupTemporaryDirectory(dir);
         }

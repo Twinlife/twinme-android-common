@@ -74,8 +74,7 @@ public class FileInfo implements Parcelable  {
     private String mTitle;
     @Nullable
     private String mPath;
-    @Nullable
-    private String mSize;
+    private long mSize;
     private int mVideoWidth;
     private int mVideoHeight;
 
@@ -124,7 +123,7 @@ public class FileInfo implements Parcelable  {
         mUri = Uri.fromFile(file);
         mTitle = fileInfo.mTitle;
         mMimeType = fileInfo.mMimeType;
-        mSize = fileInfo.mSize;
+        mSize = file.length();
         mPath = file.getPath();
         mVideoWidth = fileInfo.getVideoWidth();
         mVideoHeight = fileInfo.getVideoHeight();
@@ -193,6 +192,9 @@ public class FileInfo implements Parcelable  {
             getDataColumn(context, uri, null, null);
         } else if ("file".equalsIgnoreCase(uri.getScheme())) {
             mPath = uri.getPath();
+            if (mPath != null) {
+                mSize = new File(mPath).length();
+            }
         }
 
         // Last resort, build a title from the path.
@@ -251,8 +253,7 @@ public class FileInfo implements Parcelable  {
         return mMimeType;
     }
 
-    @Nullable
-    public String getSize() {
+    public long getSize() {
 
         return mSize;
     }
@@ -528,7 +529,7 @@ public class FileInfo implements Parcelable  {
         dest.writeString(mMimeType);
         dest.writeString(mTitle);
         dest.writeString(mPath);
-        dest.writeString(mSize);
+        dest.writeLong(mSize);
         dest.writeInt(mVideoWidth);
         dest.writeInt(mVideoHeight);
     }
@@ -539,7 +540,7 @@ public class FileInfo implements Parcelable  {
         mMimeType = in.readString();
         mTitle = in.readString();
         mPath = in.readString();
-        mSize = in.readString();
+        mSize = in.readLong();
         mVideoWidth = in.readInt();
         mVideoHeight = in.readInt();
     }
@@ -583,7 +584,7 @@ public class FileInfo implements Parcelable  {
 
                 index = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE);
                 if (index >= 0 && !cursor.isNull(index)) {
-                    mSize = cursor.getString(index);
+                    mSize = Long.parseLong(cursor.getString(index));
                 }
             }
         } catch (Exception exception) {

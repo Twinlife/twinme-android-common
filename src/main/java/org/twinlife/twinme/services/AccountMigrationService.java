@@ -795,6 +795,10 @@ public class AccountMigrationService extends Service {
                 mState |= TERMINATE_PHASE2;
 
                 mAccountAccountMigrationService.terminateMigration(mTerminateRequestId, mCommit, true);
+
+                // Remove current shortcuts, new ones will be created from the migrated DB when the app is restarted.
+                mTwinmeContext.removeAllDynamicShortcuts();
+
                 return;
             }
 
