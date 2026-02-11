@@ -419,6 +419,24 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
 
     void setShowWarningEditMessage(boolean show);
 
+    default boolean startWarningLocationBackground() {
+        //Skred-specific
+        return true;
+    }
+
+    default void setShowWarningLocationBackground(boolean show) {
+        //Skred-specific
+    }
+
+    default boolean startWarningLocationExact() {
+        //Skred-specific
+        return true;
+    }
+
+    default void setShowWarningLocationExact(boolean show) {
+        //Skred-specific
+    }
+
     //
     // Click to call description
     //

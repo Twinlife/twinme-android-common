@@ -279,6 +279,12 @@ public class LinkLoader<T> implements Loader<T> {
             Log.d(LOG_TAG, "loadImage: " + imageUrl);
         }
 
+        if (imageUrl == null) {
+            return;
+        }
+
+        imageUrl = imageUrl.replaceFirst("^http:", "https:");
+
         DownloadImageTask<T> downloadImageTask = new DownloadImageTask<>(this);
         downloadImageTask.execute(imageUrl);
     }
@@ -366,7 +372,7 @@ public class LinkLoader<T> implements Loader<T> {
             final String link = url.toString();
             if (link.startsWith("http:")) {
                 try {
-                    url = new URL(link.replace("http:", "https:"));
+                    url = new URL(link.replaceFirst("^http:", "https:"));
                 } catch (MalformedURLException exception) {
                     if (DEBUG) {
                         Log.e(LOG_TAG, "Exception", exception);
