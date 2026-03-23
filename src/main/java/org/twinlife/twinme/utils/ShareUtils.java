@@ -8,6 +8,7 @@
 
 package org.twinlife.twinme.utils;
 
+import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Parcelable;
@@ -50,23 +51,23 @@ public class ShareUtils {
     }
 
     @NonNull
-    public static List<Uri> getSharedFiles(@NonNull Intent intent) {
+    public static List<FileInfo> getSharedFiles(@NonNull Context context, @NonNull Intent intent) {
 
-        if (intent.hasExtra(Intents.INTENT_DIRECT_SHARE_URIS)) {
+        if (intent.hasExtra(Intents.INTENT_DIRECT_SHARE_FILES)) {
             // Shared files have already been imported by ShareActivity
-            List<Uri> directShareUris = intent.getParcelableArrayListExtra(Intents.INTENT_DIRECT_SHARE_URIS);
+            List<FileInfo> directShareUris = intent.getParcelableArrayListExtra(Intents.INTENT_DIRECT_SHARE_FILES);
             if (directShareUris != null) {
                 return directShareUris;
             }
         }
 
         // Look for files shared by other apps
-        List<Uri> uris = new ArrayList<>();
+        List<FileInfo> fileInfos = new ArrayList<>();
         if (intent.getClipData() != null && intent.getClipData().getItemCount() > 0) {
             for (int i = 0; i < intent.getClipData().getItemCount(); i++) {
                 Uri uri = intent.getClipData().getItemAt(i).getUri();
                 if (uri != null) {
-                    uris.add(uri);
+                    fileInfos.add(new FileInfo(context, uri));
                 }
             }
         } else if (Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction()) && intent.hasExtra(Intent.EXTRA_STREAM)) {
@@ -74,17 +75,17 @@ public class ShareUtils {
             if (streams != null) {
                 for (Parcelable parcelable : streams) {
                     if (parcelable instanceof Uri) {
-                        uris.add((Uri) parcelable);
+                        fileInfos.add(new FileInfo(context, (Uri) parcelable));
                     }
                 }
             }
         } else if (Intent.ACTION_SEND.equals(intent.getAction()) && intent.hasExtra(Intent.EXTRA_STREAM)) {
             Parcelable stream = intent.getParcelableExtra(Intent.EXTRA_STREAM);
             if (stream instanceof Uri) {
-                uris.add((Uri) stream);
+                fileInfos.add(new FileInfo(context, (Uri) stream));
             }
         }
 
-        return uris;
+        return fileInfos;
     }
 }

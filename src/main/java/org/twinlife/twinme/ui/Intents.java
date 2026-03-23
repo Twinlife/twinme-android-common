@@ -51,6 +51,7 @@ public class Intents {
     public static final String INTENT_CALL_SERVICE_MESSAGE = "org.twinlife.device.android.twinme.CallServiceMessage";
     public static final String INTENT_MIGRATION_SERVICE_MESSAGE = "org.twinlife.device.android.twinme.MigrationServiceMessage";
     public static final String INTENT_EXPORT_SERVICE_MESSAGE = "org.twinlife.device.android.twinme.ExportServiceMessage";
+    public static final String INTENT_BACKUP_SERVICE_MESSAGE = "org.twinlife.device.android.twinme.BackupServiceMessage";
     public static final String INTENT_SHOW_SPLASHSCREEN = "org.twinlife.device.android.twinme.ShowSplashScreen";
     public static final String INTENT_SPACE_SELECTION = "org.twinlife.device.android.twinme.SpaceSelection";
     public static final String INTENT_TITLE = "org.twinlife.device.android.twinme.Title";
@@ -73,8 +74,8 @@ public class Intents {
     public static final String INTENT_FROM_MENU = "org.twinlife.device.android.twinme.FromMenu";
     public static final String INTENT_INVITATION_MODE = "org.twinlife.device.android.twinme.InvitationMode";
     public static final String INTENT_CAPTURED_FILE = "org.twinlife.device.android.twinme.CapturedFile";
-    public static final String INTENT_SELECTED_URI = "org.twinlife.device.android.twinme.SelectedUri";
-    public static final String INTENT_DIRECT_SHARE_URIS = "org.twinlife.device.android.twinme.DirectShareUris";
+    public static final String INTENT_SELECTED_FILES = "org.twinlife.device.android.twinme.SelectedFiles";
+    public static final String INTENT_DIRECT_SHARE_FILES = "org.twinlife.device.android.twinme.DirectShareFiles";
     public static final String INTENT_TEXT_MESSAGE = "org.twinlife.device.android.twinme.TextMessage";
     public static final String INTENT_RESET_CONVERSATION_NAME = "org.twinlife.device.android.twinme.ResetConversationName";
     public static final String INTENT_MAX_NUMBER_COUNT = "org.twinlife.device.android.twinme.MaxNumberCount";
@@ -112,5 +113,6 @@ public class Intents {
     public static final String INTENT_IS_CERTIFIED = "org.twinlife.device.android.twinme.IsCertified";
     public static final String INTENT_PREVIEW_START_WITH_MEDIA = "org.twinlife.device.android.twinme.PreviewStartWithMedia";
     public static final String INTENT_CREATE_EXTERNAL_CALL_ENABLE = "org.twinlife.device.android.twinme.CreateExternalCallEnable";
+    public static final String INTENT_BACKUP_VERIFY_MODE = "org.twinlife.device.android.twinme.BackupVerifyMode";
     public static final String INTENT_PROXY = "org.twinlife.device.android.twinme.Proxy";
 }

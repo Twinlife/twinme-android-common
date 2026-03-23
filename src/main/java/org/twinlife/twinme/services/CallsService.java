@@ -569,6 +569,9 @@ public class CallsService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "onCreateCallReceiver: callReceiver=" + callReceiver);
         }
 
+        mOriginators.put(callReceiver.getId(), callReceiver);
+        mOriginatorTwincodes.add(callReceiver.getTwincodeOutboundId());
+
         runOnUiThread(() -> {
             if (mObserver != null) {
                 mObserver.onCreateCallReceiver(callReceiver);

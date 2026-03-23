@@ -81,7 +81,168 @@ public class MnemonicCodeUtils {
         return getWords(xorBytes(data), wordList);
     }
 
-    private byte[] xorBytes(byte[] data) {
+    @NonNull
+    public List<String> getSuggestions(@NonNull String prefix) {
+        return getSuggestions(prefix, null);
+    }
+
+    @NonNull
+    public List<String> getSuggestions(@NonNull String prefix, @Nullable Locale locale) {
+        List<String> wordList = getWordList(locale);
+        List<String> suggestions = new ArrayList<>();
+
+        prefix = prefix.trim().toLowerCase();
+        if (prefix.isEmpty()) {
+            return suggestions;
+        }
+
+        for (String word : wordList) {
+            if (word.startsWith(prefix)) {
+                suggestions.add(word);
+            } else if (word.compareTo(prefix) > 0) {
+                break;
+            }
+        }
+
+        return suggestions;
+    }
+
+    /**
+     * Convert mnemonic word list to original entropy value.
+     */
+    @Nullable
+    public byte[] toEntropy(@NonNull List<String> words) {
+        if (words.size() % 3 > 0) {
+            Log.e(LOG_TAG, "Word list size must be multiple of three words. list size = " + words.size());
+            return null;
+        }
+
+        if (words.isEmpty()) {
+            Log.e(LOG_TAG, "Word list is empty.");
+            return null;
+        }
+
+
+        List<String> wordList = getWordList(Locale.ENGLISH);
+
+        // Look up all the words in the list and construct the
+        // concatenation of the original entropy and the checksum.
+        //
+        int concatLenBits = words.size() * 11;
+        boolean[] concatBits = new boolean[concatLenBits];
+        int wordIndex = 0;
+        for (String word : words) {
+            // Find the words index in the wordlist.
+            int ndx = Collections.binarySearch(wordList, word.toLowerCase());
+            if (ndx < 0) {
+                Log.e(LOG_TAG, "Unknown word: " + word);
+                return null;
+            }
+
+
+            // Set the next 11 bits to the value of the index.
+            for (int ii = 0; ii < 11; ++ii) {
+                concatBits[(wordIndex * 11) + ii] = (ndx & (1 << (10 - ii))) != 0;
+            }
+            ++wordIndex;
+        }
+
+        int checksumLengthBits = concatLenBits / 33;
+        int entropyLengthBits = concatLenBits - checksumLengthBits;
+
+        // Extract original entropy as bytes.
+        byte[] entropy = new byte[entropyLengthBits / 8];
+        for (int ii = 0; ii < entropy.length; ++ii) {
+            for (int jj = 0; jj < 8; ++jj) {
+                if (concatBits[(ii * 8) + jj]) {
+                    entropy[ii] |= (byte) (1 << (7 - jj));
+                }
+            }
+        }
+
+        // Take the digest of the entropy.
+        byte[] hash;
+        try {
+            hash = MessageDigest.getInstance("SHA-256").digest(entropy);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e); //Can't happen
+        }
+
+        boolean[] hashBits = bytesToBits(hash);
+
+        // Check all the checksum bits.
+        for (int i = 0; i < checksumLengthBits; ++i) {
+            if (concatBits[entropyLengthBits + i] != hashBits[i]) {
+                Log.e(LOG_TAG, "Invalid checksum");
+                return null;
+            }
+        }
+
+        return entropy;
+    }
+
+    /**
+     * Convert entropy data to mnemonic word list.
+     *
+     * @param entropy entropy bits, length must be a multiple of 32 bits
+     */
+    @Nullable
+    public ArrayList<String> toMnemonic(@NonNull byte[] entropy) {
+        if (entropy.length % 4 != 0) {
+            Log.e(LOG_TAG, "entropy length not multiple of 32 bits.");
+            return null;
+        }
+
+        if (entropy.length == 0) {
+            Log.e(LOG_TAG, "entropy is empty.");
+            return null;
+        }
+
+        // We take initial entropy of ENT bits and compute its
+        // checksum by taking first ENT / 32 bits of its SHA256 hash.
+
+        byte[] hash;
+        try {
+            hash = MessageDigest.getInstance("SHA-256").digest(entropy);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e); //Can't happen
+        }
+        boolean[] hashBits = bytesToBits(hash);
+
+        boolean[] entropyBits = bytesToBits(entropy);
+        int checksumLengthBits = entropyBits.length / 32;
+
+        // We append these bits to the end of the initial entropy.
+        boolean[] concatBits = new boolean[entropyBits.length + checksumLengthBits];
+        System.arraycopy(entropyBits, 0, concatBits, 0, entropyBits.length);
+        System.arraycopy(hashBits, 0, concatBits, entropyBits.length, checksumLengthBits);
+
+        // Next we take these concatenated bits and split them into
+        // groups of 11 bits. Each group encodes number from 0-2047
+        // which is a position in a wordlist.  We convert numbers into
+        // words and use joined words as mnemonic sentence.
+
+        ArrayList<String> words = new ArrayList<>();
+        int nWords = concatBits.length / 11;
+        for (int i = 0; i < nWords; ++i) {
+            int index = 0;
+            for (int j = 0; j < 11; ++j) {
+                index <<= 1;
+                if (concatBits[(i * 11) + j])
+                    index |= 0x1;
+            }
+            words.add(getWordList(Locale.ENGLISH).get(index));
+        }
+
+        return words;
+    }
+
+    /*
+      Private methods
+     */
+
+    @NonNull
+    private byte[] xorBytes(@NonNull byte[] data) {
         byte[] result = new byte[8];
         for (int i = 0; i < 4; i++) {
             for (int j = 0; j < 8; j++) {
@@ -89,43 +250,6 @@ public class MnemonicCodeUtils {
             }
         }
         return result;
-    }
-
-    /**
-     * Hash the input data and generate a word list.
-     *
-     * @param data   the data to convert.
-     * @param locale the language of the words. English will be used as a fallback if we don't have a word list for this language.
-     * @return a list of 23 words generated from the hash, or an empty list if data is empty.
-     */
-    @NonNull
-    public List<String> hashAndMnemonic(@NonNull byte[] data, @Nullable Locale locale) {
-        if (DEBUG) {
-            Log.d(LOG_TAG, "toMnemonic data= " + Arrays.toString(data) + " locale= " + locale);
-        }
-
-        if (data.length == 0) {
-            Log.e(LOG_TAG, "data is empty");
-            return Collections.emptyList();
-        }
-
-        List<String> wordList = getWordList(locale);
-
-        if (wordList.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        MessageDigest md;
-        try {
-            md = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            Log.e(LOG_TAG, "Could not get MessageDigest instance", e);
-            return Collections.emptyList();
-        }
-
-        byte[] hash = md.digest(data);
-
-        return getWords(hash, wordList);
     }
 
     @NonNull

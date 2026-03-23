@@ -1,9 +1,10 @@
 /*
- *  Copyright (c) 2023-2024 twinlife SA.
+ *  Copyright (c) 2023-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
  *   Romain Kolb (romain.kolb@skyrock.com)
+ *   Stephane Carrez (Stephane.Carrez@twin.life)
  */
 
 package org.twinlife.twinme.services;
@@ -26,7 +27,6 @@ import org.twinlife.twinme.models.Space;
 import org.twinlife.twinme.ui.TwinmeActivity;
 
 import java.io.File;
-import java.util.List;
 import java.util.UUID;
 
 public class CallReceiverService extends AbstractTwinmeService {
@@ -36,8 +36,6 @@ public class CallReceiverService extends AbstractTwinmeService {
     private static final int CREATE_CALL_RECEIVER_DONE = 1 << 1;
     private static final int GET_CALL_RECEIVER = 1 << 2;
     private static final int GET_CALL_RECEIVER_DONE = 1 << 3;
-    private static final int GET_CALL_RECEIVERS = 1 << 4;
-    private static final int GET_CALL_RECEIVERS_DONE = 1 << 5;
     private static final int DELETE_CALL_RECEIVER = 1 << 6;
     private static final int DELETE_CALL_RECEIVER_DONE = 1 << 7;
     private static final int GET_SPACE = 1 << 8;
@@ -52,6 +50,8 @@ public class CallReceiverService extends AbstractTwinmeService {
     private static final int GET_IDENTITY_AVATAR_DONE = 1 << 17;
     private static final int GET_INVITATION_LINK = 1 << 18;
     private static final int GET_INVITATION_LINK_DONE = 1 << 19;
+    private static final int GET_PROFILE_AVATAR = 1 << 20;
+    private static final int GET_PROFILE_AVATAR_DONE = 1 << 21;
 
     public interface Observer extends AbstractTwinmeService.Observer {
 
@@ -73,15 +73,9 @@ public class CallReceiverService extends AbstractTwinmeService {
             }
         }
 
-        default void onGetCallReceiver(@Nullable CallReceiver callReceiver) {
+        default void onGetCallReceiver(@Nullable CallReceiver callReceiver, @Nullable Bitmap bitmap) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "default Observer.onGetCallReceiver: callReceiver=" + callReceiver);
-            }
-        }
-
-        default void onGetCallReceivers(@NonNull List<CallReceiver> callReceivers) {
-            if (DEBUG) {
-                Log.d(LOG_TAG, "default Observer.onGetCallReceivers: callReceivers.size=" + callReceivers.size());
             }
         }
 
@@ -120,6 +114,15 @@ public class CallReceiverService extends AbstractTwinmeService {
                 Log.d(LOG_TAG, "default Observer.onGetTwincodeURI: uri=" + uri);
             }
         }
+
+        default void onGetProfileAvatar(@NonNull Bitmap avatar) {
+            if (DEBUG) {
+                Log.d(LOG_TAG, "default Observer.onGetProfileAvatar: avatar=" + avatar);
+            }
+        }
+
+        // Do not provide a default to force an implementation by the activity.
+        void onGetCallReceiverNotFound();
     }
 
     private class TwinmeContextObserver extends AbstractTwinmeService.TwinmeContextObserver {
@@ -175,10 +178,6 @@ public class CallReceiverService extends AbstractTwinmeService {
     @Nullable
     private String mDescription;
     @Nullable
-    private String mIdentityName;
-    @Nullable
-    private String mIdentityDescription;
-    @Nullable
     private Bitmap mAvatar;
     @Nullable
     private File mAvatarFile;
@@ -186,6 +185,8 @@ public class CallReceiverService extends AbstractTwinmeService {
     private Capabilities mCapabilities;
     @Nullable
     private Space mSpace;
+    @Nullable
+    private ImageId mProfileAvatarId;
     @Nullable
     private ImageId mAvatarId;
     @Nullable
@@ -242,13 +243,11 @@ public class CallReceiverService extends AbstractTwinmeService {
      * @param space               Mandatory. The call receiver will be linked to the space's profile.
      * @param name                The label of the call receiver (device-local).
      * @param description         The description of the call receiver (device-local).
-     * @param identityName        The name of the call receiver's twincodeOutbound.
-     * @param identityDescription The description of the call receiver's twincodeOutbound.
      * @param avatar              The thumbnail of the call receiver's avatar.
      * @param avatarFile          The actual call receiver's avatar. Mandatory if avatar is not null.
      * @param capabilities        The call receiver's advertised capabilities.
      */
-    public void createCallReceiver(@NonNull Space space, @Nullable String name, @Nullable String description, @Nullable String identityName, @Nullable String identityDescription, @Nullable Bitmap avatar, @Nullable File avatarFile, @Nullable Capabilities capabilities) {
+    public void createCallReceiver(@NonNull Space space, @Nullable String name, @Nullable String description, @Nullable Bitmap avatar, @Nullable File avatarFile, @Nullable Capabilities capabilities) {
         if (DEBUG) {
             Log.d(LOG_TAG, "createCallReceiver: mAvatarFile= " + avatarFile);
         }
@@ -256,8 +255,6 @@ public class CallReceiverService extends AbstractTwinmeService {
         mSpace = space;
         mName = name;
         mDescription = description;
-        mIdentityName = identityName;
-        mIdentityDescription = identityDescription;
         mAvatar = avatar;
         mAvatarFile = avatarFile;
         mCapabilities = capabilities;
@@ -274,7 +271,7 @@ public class CallReceiverService extends AbstractTwinmeService {
      * Find a {@link CallReceiver} by its DB ID.
      * <p>
      * Once found, the CallReceiver will be made available through the
-     * {@link Observer#onGetCallReceiver(CallReceiver)} callback. If no CallReceiver was found,
+     * {@link Observer#onGetCallReceiver(CallReceiver, Bitmap)} callback. If no CallReceiver was found,
      * the callback will be called with a null argument.
      *
      * @param callReceiverId the ID of the CallReceiver.
@@ -288,24 +285,6 @@ public class CallReceiverService extends AbstractTwinmeService {
 
         mWork |= GET_CALL_RECEIVER;
         mState &= ~(GET_CALL_RECEIVER | GET_CALL_RECEIVER_DONE);
-
-        startOperation();
-    }
-
-    /**
-     * <p>
-     * Retrieve all {@link CallReceiver}s.
-     * <p>
-     * Once retrieved from the DB (or the in-memory cache), the CallReceivers will be made available through the
-     * {@link Observer#onGetCallReceivers(List)} callback.
-     */
-    public void getCallReceivers() {
-        if (DEBUG) {
-            Log.d(LOG_TAG, "getCallReceivers");
-        }
-
-        mWork |= GET_CALL_RECEIVERS;
-        mState &= ~(GET_CALL_RECEIVERS | GET_CALL_RECEIVERS_DONE);
 
         startOperation();
     }
@@ -364,27 +343,19 @@ public class CallReceiverService extends AbstractTwinmeService {
      * null parameters will be ignored and the current value will be kept.
      *
      * @param callReceiver The CallReceiver to update.
-     * @param name         The label of the call receiver. Mandatory (the current name should be passed if it does not need to be changed).
-     * @param description  The description of the call receiver (device-local).
-     * @param identityName The name of the call receiver's twincodeOutbound.
-     * @param identityDescription  The description of the call receiver's twincodeOutbound.
-     * @param avatar       The thumbnail of the call receiver's avatar.
-     * @param avatarFile   The actual call receiver's avatar. Mandatory if avatar is not null.
      * @param capabilities The call receiver's advertised capabilities.
      */
-    public void updateCallReceiver(@NonNull CallReceiver callReceiver, @Nullable String name, @Nullable String description, @Nullable String identityName, @Nullable String identityDescription, @Nullable Bitmap avatar, @Nullable File avatarFile, @Nullable Capabilities capabilities) {
+    public void updateCallReceiver(@NonNull CallReceiver callReceiver, @NonNull Capabilities capabilities) {
         if (DEBUG) {
             Log.d(LOG_TAG, "updateCallReceiver: callReceiver=");
         }
 
         mCallReceiver = callReceiver;
-        mName = name;
-        mDescription = description;
-        mIdentityName = identityName;
-        mIdentityDescription = identityDescription;
-        mAvatar = avatar;
-        mAvatarFile = avatarFile;
         mCapabilities = capabilities;
+        mName = callReceiver.getName();
+        mDescription = callReceiver.getDescription();
+        mAvatar = null;
+        mAvatarFile = null;
 
         mWork |= UPDATE_CALL_RECEIVER;
         mState &= ~(UPDATE_CALL_RECEIVER | UPDATE_CALL_RECEIVER_DONE);
@@ -392,14 +363,48 @@ public class CallReceiverService extends AbstractTwinmeService {
         startOperation();
     }
 
-    public void getLargeAvatar(@NonNull ImageId avatarId) {
+    /**
+     * <p>
+     * Update a {@link CallReceiver}.
+     * <p>
+     * Apart from the CallReceiver itself and its name, all parameters are optional.
+     * null parameters will be ignored and the current value will be kept.
+     *
+     * @param callReceiver The CallReceiver to update.
+     * @param name         The name of the call receiver's twincodeOutbound.
+     * @param description  The description of the call receiver's twincodeOutbound.
+     * @param avatar       The thumbnail of the call receiver's avatar.
+     * @param avatarFile   The actual call receiver's avatar. Mandatory if avatar is not null.
+     */
+    public void updateCallReceiver(@NonNull CallReceiver callReceiver, @Nullable String name, @Nullable String description, @Nullable Bitmap avatar, @Nullable File avatarFile) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "getLargeAvatar: avatarId=" + avatarId);
+            Log.d(LOG_TAG, "updateCallReceiver: callReceiver=" + callReceiver);
         }
 
-        mWork |= GET_AVATAR;
-        mState &= ~(GET_AVATAR | GET_AVATAR_DONE);
-        mAvatarId = avatarId;
+        mCallReceiver = callReceiver;
+        mName = name;
+        mDescription = description;
+        mAvatar = avatar;
+        mAvatarFile = avatarFile;
+
+        mWork |= UPDATE_CALL_RECEIVER;
+        mState &= ~(UPDATE_CALL_RECEIVER | UPDATE_CALL_RECEIVER_DONE);
+
+        startOperation();
+    }
+
+    public void getProfileAvatar(@Nullable ImageId avatarId) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "getProfileAvatar: avatarId=" + avatarId);
+        }
+
+        if (avatarId == null) {
+            return;
+        }
+
+        mWork |= GET_PROFILE_AVATAR;
+        mState &= ~(GET_PROFILE_AVATAR | GET_PROFILE_AVATAR_DONE);
+        mProfileAvatarId = avatarId;
         showProgressIndicator();
         startOperation();
     }
@@ -414,6 +419,28 @@ public class CallReceiverService extends AbstractTwinmeService {
         mIdentityAvatarId = avatarId;
         showProgressIndicator();
         startOperation();
+    }
+
+    /**
+     * Get the organizer avatar for a conference call receiver.
+     *
+     * @param callReceiver The CallReceiver to query.
+     * @param consumer the consumer that will be called from the main UI thread when an image exist.
+     */
+    public void getOrganizerAvatar(@NonNull CallReceiver callReceiver, @NonNull TwinmeContext.Consumer<Bitmap> consumer) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "getOrganizerAvatar: callReceiver=" + callReceiver);
+        }
+
+        final ImageId organizerAvatarId = callReceiver.getIdentityAvatarId();
+        if (organizerAvatarId != null) {
+            mTwinmeContext.execute(() -> {
+                Bitmap avatar = getImage(organizerAvatarId);
+                if (avatar != null) {
+                    runOnUiThread(() -> consumer.accept(avatar));
+                }
+            });
+        }
     }
 
     //
@@ -434,13 +461,7 @@ public class CallReceiverService extends AbstractTwinmeService {
         if ((mState & GET_SPACE) == 0) {
             mState |= GET_SPACE;
 
-            long requestId = newOperation(GET_SPACE);
-            if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace: requestId=" + requestId);
-            }
-
             mTwinmeContext.getCurrentSpace((ErrorCode errorCode, Space space) -> runOnUiThread(() -> {
-                finishOperation(requestId);
                 if (mObserver != null) {
                     if (space != null) {
                         mSpace = space;
@@ -471,7 +492,7 @@ public class CallReceiverService extends AbstractTwinmeService {
                     Log.d(LOG_TAG, "mTwinmeContext.createCallReceiver: requestId=" + requestId + " mAvatarFile=" + mAvatarFile);
                 }
 
-                mTwinmeContext.createCallReceiver(requestId, mSpace, mName, mDescription, mIdentityName, mIdentityDescription, mAvatar, mAvatarFile, mCapabilities, this::onCreateCallReceiver);
+                mTwinmeContext.createCallReceiver(requestId, mSpace, mName, mDescription, mAvatar, mAvatarFile, mCapabilities, this::onCreateCallReceiver);
                 return;
             }
 
@@ -514,27 +535,6 @@ public class CallReceiverService extends AbstractTwinmeService {
         }
 
         //
-        // Get all call receivers
-        //
-
-        if ((mWork & GET_CALL_RECEIVERS) != 0) {
-            if ((mState & GET_CALL_RECEIVERS) == 0) {
-                mState |= GET_CALL_RECEIVERS;
-
-                long requestId = newOperation(GET_CALL_RECEIVERS);
-                if (DEBUG) {
-                    Log.d(LOG_TAG, "mTwinmeContext.getCallReceivers: requestId=" + requestId);
-                }
-                // SCz fix mTwinmeContext.getCallReceivers(requestId, this::onGetCallReceivers);
-                return;
-            }
-
-            if ((mState & GET_CALL_RECEIVERS_DONE) == 0) {
-                return;
-            }
-        }
-
-        //
         // Delete a call receiver
         //
 
@@ -559,7 +559,7 @@ public class CallReceiverService extends AbstractTwinmeService {
         // Update a call receiver
         //
 
-        if (mCallReceiver != null && (mWork & UPDATE_CALL_RECEIVER) != 0) {
+        if (mCallReceiver != null && (mWork & UPDATE_CALL_RECEIVER) != 0 && mName != null) {
             if ((mState & UPDATE_CALL_RECEIVER) == 0) {
                 mState |= UPDATE_CALL_RECEIVER;
 
@@ -567,32 +567,11 @@ public class CallReceiverService extends AbstractTwinmeService {
                 if (DEBUG) {
                     Log.d(LOG_TAG, "mTwinmeContext.updateCallReceiver: requestId=" + requestId);
                 }
-                mTwinmeContext.updateCallReceiver(requestId, mCallReceiver, mName, mDescription, mIdentityName, mIdentityDescription, mAvatar, mAvatarFile, mCapabilities);
+                mTwinmeContext.updateCallReceiver(requestId, mCallReceiver, mName, mDescription, mAvatar, mAvatarFile, mCapabilities);
                 return;
             }
 
             if ((mState & UPDATE_CALL_RECEIVER_DONE) == 0) {
-                return;
-            }
-        }
-
-        //
-        // Change call receiver's twincode
-        //
-
-        if (mCallReceiver != null && (mWork & CHANGE_CALL_RECEIVER_TWINCODE) != 0) {
-            if ((mState & CHANGE_CALL_RECEIVER_TWINCODE) == 0) {
-                mState |= CHANGE_CALL_RECEIVER_TWINCODE;
-
-                long requestId = newOperation(CHANGE_CALL_RECEIVER_TWINCODE);
-                if (DEBUG) {
-                    Log.d(LOG_TAG, "mTwinmeContext.changeCallReceiverTwincode: requestId=" + requestId + " callReceiver=" + mCallReceiver);
-                }
-                mTwinmeContext.changeCallReceiverTwincode(requestId, mCallReceiver);
-                return;
-            }
-
-            if ((mState & CHANGE_CALL_RECEIVER_TWINCODE_DONE) == 0) {
                 return;
             }
         }
@@ -669,6 +648,31 @@ public class CallReceiverService extends AbstractTwinmeService {
         }
 
         //
+        // Get profile avatar if user choose UITemplateExternalCall.TemplateType.PROFILE
+        //
+        if (mProfileAvatarId != null && (mWork & GET_PROFILE_AVATAR) != 0) {
+            if ((mState & GET_PROFILE_AVATAR) == 0) {
+                mState |= GET_PROFILE_AVATAR;
+
+                Bitmap image = mTwinmeContext.getImageService().getImage(mProfileAvatarId, ImageService.Kind.LARGE);
+                mState |= GET_PROFILE_AVATAR_DONE;
+                mAvatar = image;
+                if (image != null) {
+                    runOnUiThread(() -> {
+                        if (mObserver != null) {
+                            mObserver.onGetProfileAvatar(image);
+                        }
+                    });
+                }
+                onOperation();
+                return;
+            }
+            if ((mState & GET_PROFILE_AVATAR_DONE) == 0) {
+                return;
+            }
+        }
+
+        //
         // Last Step: everything done, we can hide the progress indicator.
         //
 
@@ -698,16 +702,29 @@ public class CallReceiverService extends AbstractTwinmeService {
         mState |= GET_CALL_RECEIVER_DONE;
         if (callReceiver != null) {
             mTwincodeOutbound = callReceiver.getTwincodeOutbound();
-            mInvitationKind = callReceiver.isTransfer() ? TwincodeURI.Kind.Transfer : TwincodeURI.Kind.Call;
-            mWork |= GET_INVITATION_LINK;
-            mState &= ~(GET_INVITATION_LINK | GET_INVITATION_LINK_DONE);
-        }
-
-        runOnUiThread(() -> {
-            if (mObserver != null) {
-                mObserver.onGetCallReceiver(callReceiver);
+            if (callReceiver.isTransfer()) {
+                mInvitationKind = TwincodeURI.Kind.Transfer;
+            } else if (callReceiver.isConference()) {
+                mInvitationKind = TwincodeURI.Kind.Meeting;
+            } else {
+                mInvitationKind = TwincodeURI.Kind.Call;
             }
-        });
+            mWork |= GET_INVITATION_LINK | GET_AVATAR;
+            mState &= ~(GET_INVITATION_LINK | GET_INVITATION_LINK_DONE | GET_AVATAR | GET_AVATAR_DONE);
+            mAvatarId = callReceiver.getAvatarId();
+            final Bitmap bitmap = getImage(mAvatarId);
+            runOnUiThread(() -> {
+                if (mObserver != null) {
+                    mObserver.onGetCallReceiver(callReceiver, bitmap);
+                }
+            });
+        } else {
+            runOnUiThread(() -> {
+                if (mObserver != null) {
+                    mObserver.onGetCallReceiverNotFound();
+                }
+            });
+        }
         onOperation();
     }
 
@@ -724,21 +741,6 @@ public class CallReceiverService extends AbstractTwinmeService {
                 }
             });
         }
-        onOperation();
-    }
-
-    private void onGetCallReceivers(@NonNull List<CallReceiver> callReceivers) {
-        if (DEBUG) {
-            Log.d(LOG_TAG, "onGetCallReceiver callReceivers.size=" + callReceivers.size());
-        }
-
-        mState |= GET_CALL_RECEIVERS_DONE;
-
-        runOnUiThread(() -> {
-            if (mObserver != null) {
-                mObserver.onGetCallReceivers(callReceivers);
-            }
-        });
         onOperation();
     }
 
@@ -777,7 +779,7 @@ public class CallReceiverService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "onUpdateCallReceiver callReceiver=" + callReceiver);
         }
 
-        mState |= UPDATE_CALL_RECEIVER_DONE;
+        mState |= CHANGE_CALL_RECEIVER_TWINCODE_DONE;
 
         runOnUiThread(() -> {
             if (mObserver != null) {

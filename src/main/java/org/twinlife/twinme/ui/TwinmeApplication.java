@@ -106,9 +106,12 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
         REMOTE_CAMERA,
         REMOTE_CAMERA_SETTING,
         TRANSFER_CALL,
-        PROXY
+        PROXY,
+        BACKUP,
+        RESTORE,
+        VERIFY_BACKUP,
+        BACKUP_BETA
     }
-
 
     @NonNull
     String errorToString(BaseService.ErrorCode errorCode);
@@ -345,6 +348,16 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     default void setInvitationSubscriptionTwincode(String twincode){
         //Skred-specific
     }
+
+    //
+    // Backup
+    //
+
+    boolean showBackupWarning();
+
+    void setLastBackupDate();
+
+    void setFirstInstallationBackupDate();
 
     //
     // Coach Mark

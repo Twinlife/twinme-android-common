@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017-2024 twinlife SA.
+ *  Copyright (c) 2017-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -455,7 +455,7 @@ public class AcceptInvitationService extends AbstractTwinmeService {
             mState |= GET_TWINCODE;
             if (mTwincodeOutboundId == null) {
                 mState |= GET_TWINCODE_DONE;
-                runOnGetTwincodeNotFound(mObserver);
+                runOnGetTwincodeNotFound(mObserver, ErrorCode.ITEM_NOT_FOUND);
 
             } else {
                 if (DEBUG) {
@@ -715,7 +715,7 @@ public class AcceptInvitationService extends AbstractTwinmeService {
             }
         } else if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
             // Group not found means the invitation is invalid.
-            runOnGetTwincodeNotFound(mObserver);
+            runOnGetTwincodeNotFound(mObserver, errorCode);
         } else {
             onError(GET_GROUP, errorCode, null);
         }
@@ -736,7 +736,7 @@ public class AcceptInvitationService extends AbstractTwinmeService {
             }
         } else if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
             // Contact not found means the invitation is invalid.
-            runOnGetTwincodeNotFound(mObserver);
+            runOnGetTwincodeNotFound(mObserver, errorCode);
         }
         onOperation();
     }
@@ -829,32 +829,32 @@ public class AcceptInvitationService extends AbstractTwinmeService {
             return;
         }
 
-        if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+        if (errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) {
             switch (operationId) {
                 case GET_TWINCODE:
                     mState |= GET_TWINCODE_DONE;
-                    runOnGetTwincodeNotFound(mObserver);
+                    runOnGetTwincodeNotFound(mObserver, errorCode);
                     return;
 
                 case GET_GROUP:
                     mState |= GET_GROUP_DONE;
 
                     // Group not found means the invitation is invalid.
-                    runOnGetTwincodeNotFound(mObserver);
+                    runOnGetTwincodeNotFound(mObserver, errorCode);
                     return;
 
                 case GET_CONTACT:
                     mState |= GET_CONTACT_DONE;
 
                     // Contact not found means the invitation is invalid.
-                    runOnGetTwincodeNotFound(mObserver);
+                    runOnGetTwincodeNotFound(mObserver, errorCode);
                     return;
 
                 case CREATE_CONTACT:
                     mState |= CREATE_CONTACT_DONE;
 
                     // It can happen that the twincode becomes invalid when we create the contact.
-                    runOnGetTwincodeNotFound(mObserver);
+                    runOnGetTwincodeNotFound(mObserver, errorCode);
                     return;
 
                 case DELETE_DESCRIPTOR:

@@ -951,6 +951,45 @@ public class CommonUtils {
         return dateToString + "\n" + timeToString;
     }
 
+    public static String formatBackupInterval(Context context, long timestamp) {
+
+        Date date = new Date(timestamp);
+        Date now = new Date();
+
+        long dateDiff = now.getTime() - date.getTime();
+        long dayAgo = TimeUnit.MILLISECONDS.toDays(dateDiff);
+
+        String formatDate = "";
+        String dateToString = "";
+        if (isYesterday(timestamp)) {
+            dateToString = DateUtils.getRelativeTimeSpanString(date.getTime(), now.getTime(), DateUtils.DAY_IN_MILLIS).toString();
+        } else if (dayAgo < 6 && !DateUtils.isToday(timestamp)) {
+            formatDate = "EEEE";
+        } else if (!DateUtils.isToday(timestamp)) {
+            formatDate = "dd/MM/yyyy";
+        }
+
+        if (!formatDate.isEmpty()) {
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat(formatDate, Locale.getDefault());
+            dateToString = simpleDateFormat.format(date);
+        }
+
+        String formatTime;
+        if (DateFormat.is24HourFormat(context)) {
+            formatTime = "kk:mm";
+        } else {
+            formatTime = "hh:mm a";
+        }
+
+        SimpleDateFormat simpleTimeFormat = new SimpleDateFormat(formatTime, Locale.getDefault());
+        String timeToString= simpleTimeFormat.format(date);
+
+        if (dateToString.isEmpty()) {
+            return timeToString;
+        }
+        return dateToString + " - " + timeToString;
+    }
+
     private static boolean isYesterday(long timestamp) {
 
         Calendar yesterday = Calendar.getInstance();

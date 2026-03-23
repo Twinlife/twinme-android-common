@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2025 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -126,6 +126,8 @@ public class AbstractTwinmeService {
         void onGetTwincode(@NonNull TwincodeOutbound twincode, @Nullable Bitmap avatar);
 
         void onGetTwincodeNotFound();
+
+        void onGetTwincodeExpired();
     }
 
     protected class TwinmeContextObserver extends TwinmeContext.DefaultObserver {
@@ -868,13 +870,17 @@ public class AbstractTwinmeService {
         }
     }
 
-    protected void runOnGetTwincodeNotFound(@Nullable TwincodeObserver observer) {
+    protected void runOnGetTwincodeNotFound(@Nullable TwincodeObserver observer, @NonNull ErrorCode errorCode) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "runOnGetTwincodeNotFound");
+            Log.d(LOG_TAG, "runOnGetTwincodeNotFound errorCode=" + errorCode);
         }
 
         if (observer != null) {
-            runOnUiThread(observer::onGetTwincodeNotFound);
+            if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+                runOnUiThread(observer::onGetTwincodeNotFound);
+            } else {
+                runOnUiThread(observer::onGetTwincodeExpired);
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2024 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -614,7 +614,7 @@ public class GroupInvitationService extends AbstractTwinmeService {
             return;
         }
 
-        if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+        if (errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) {
             // The invitation descriptor can be valid but the group has been removed.
             // Trigger the delete invitation locally through the markDescriptorDeleted()
             // and notify the activity through the onDeleteInvitation() callback when markDescriptorDeleted has finished.

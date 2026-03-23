@@ -53,7 +53,7 @@ public class InfoItemService extends AbstractTwinmeService {
         void onGetGroupMembers(@NonNull List<GroupMember> groupMembers);
 
         void onGetDescriptor(@Nullable Descriptor descriptor,
-                             @Nullable Map<TwincodeOutbound, DescriptorAnnotation> annotations);
+                             @Nullable Map<TwincodeOutbound, List<DescriptorAnnotation>> annotations);
     }
 
     @NonNull
@@ -103,7 +103,7 @@ public class InfoItemService extends AbstractTwinmeService {
     }
 
     public void listAnnotations(@NonNull DescriptorId descriptorId,
-                                @NonNull TwinmeContext.ConsumerWithError<Map<TwincodeOutbound, DescriptorAnnotation>> consumer) {
+                                @NonNull TwinmeContext.ConsumerWithError<Map<TwincodeOutbound, List<DescriptorAnnotation>>> consumer) {
         if (DEBUG) {
             Log.d(LOG_TAG, "listAnnotations: descriptorId=" + descriptorId);
         }
@@ -204,7 +204,7 @@ public class InfoItemService extends AbstractTwinmeService {
             mState |= GET_DESCRIPTOR;
             ConversationService conversationService = mTwinmeContext.getConversationService();
             Descriptor descriptor = conversationService.getDescriptor(mDescriptorId);
-            Map<TwincodeOutbound, DescriptorAnnotation> annotations = conversationService.listAnnotations(mDescriptorId);
+            Map<TwincodeOutbound, List<DescriptorAnnotation>> annotations = conversationService.listAnnotations(mDescriptorId);
             if (descriptor != null && descriptor.getReplyToDescriptorId() != null) {
                 descriptor.setReplyToDescriptor(conversationService.getDescriptor(descriptor.getReplyToDescriptorId()));
             }

@@ -61,7 +61,7 @@ public class ShareService extends AbstractTwinmeService {
 
         void onGetDescriptor(@Nullable ConversationService.Descriptor descriptor);
 
-        void onSendFilesFinished();
+        void onSendFilesFinished(@Nullable UUID conversationId);
 
         void onErrorNoPermission();
     }
@@ -387,7 +387,7 @@ public class ShareService extends AbstractTwinmeService {
         if (mCurrentFile == null) {
             runOnUiThread(() -> {
                 if (mObserver != null && mFiles.isEmpty()) {
-                    mObserver.onSendFilesFinished();
+                    mObserver.onSendFilesFinished(mConversationId);
                 }
             });
         }

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019-2025 twinlife SA.
+ *  Copyright (c) 2019-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -198,6 +198,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
     public static final String PARAM_TERMINATE_REASON = "terminateReason";
     public static final String PARAM_CONTACT_ID = "contactId";
     public static final String PARAM_GROUP_ID = "groupId";
+    public static final String PARAM_CALL_TYPE = "callType";
     public static final String PARAM_CALL_ADD_PARTICIPANT = "addParticipant";
     public static final String PARAM_CALL_ID = "callId";
     public static final String PARAM_PEER_CONNECTION_ID = "peerConnectionId";
@@ -335,6 +336,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
                 request.call.startCall(descriptor.getDescriptorId());
                 request.call.checkOperation(CallOperation.START_CALL_DONE);
 
+                onOperation(request.call);
                 final List<CallConnection> connections = request.call.getConnections();
                 for (CallConnection connection : connections) {
                     onOperation(connection);
@@ -493,6 +495,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
                 callConnection.setPeerVersion(offer.version);
                 callConnection.setInvited(true);
+                call.checkOperation(CallOperation.CREATE_INCOMING_PEER_CONNECTION_DONE);
 
                 synchronized (this) {
                     mPeers.put(peerConnectionId, callConnection);
@@ -1578,13 +1581,14 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             }
 
             // Discreet relation: do not create the CallDescriptor.
+            CallState callState = callConnection.getCall();
             if (capabilities.hasDiscreet()) {
-                CallState callState = callConnection.getCall();
                 callState.checkOperation(CallOperation.START_CALL);
                 callState.checkOperation(CallOperation.START_CALL_DONE);
             }
 
             setOriginator(callConnection, originator);
+            onOperation(callState);
             onOperation(callConnection);
             if (capabilities.hasAutoAnswerCall()) {
                 // The onActionAcceptCall() must be executed from the main UI thread.
@@ -1658,13 +1662,13 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
                     // The peer is joining an existing group call => invite immediately
                     if (originator.getType() == Originator.Type.GROUP_MEMBER &&
-                            (callConnection.checkOperation(ConnectionOperation.INVITE_CALL_ROOM))) {
+                            (callConnection.checkOperation(CallOperation.INVITE_CALL_ROOM))) {
                         // Workaround: at this point we haven't initialized the peer version with its offer yet,
                         // but we need it for the callConnection.isGroupSupported() check in inviteCallRoom().
                         // This is harmless since we know the peer supports group calls (he wouldn't be able to call us otherwise),
                         // and the correct version will soon be extracted from the offer.
                         callConnection.setPeerVersion(new Version(PeerConnectionService.MAJOR_VERSION, PeerConnectionService.MINOR_VERSION));
-                        call.inviteCallRoom(newOperation(callConnection, ConnectionOperation.INVITE_CALL_ROOM), callConnection);
+                        call.inviteCallRoom(newOperation(callConnection, CallOperation.INVITE_CALL_ROOM), callConnection);
                     }
 
                     callConnection.setTimer(mExecutor, this::callTimeout, CONNECT_TIMEOUT, callConnection.getStatus().toAccepted());
@@ -1713,11 +1717,12 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
         final UUID contactId = (UUID) intent.getSerializableExtra(PARAM_CONTACT_ID);
         final UUID groupId = (UUID) intent.getSerializableExtra(PARAM_GROUP_ID);
+        final Originator.Type subjectType = (Originator.Type) intent.getSerializableExtra(PARAM_CALL_TYPE);
 
         final CallStatus askCallStatus = (CallStatus) intent.getSerializableExtra(PARAM_CALL_MODE);
         final boolean addParticipant = intent.getBooleanExtra(PARAM_CALL_ADD_PARTICIPANT, false);
 
-        if (mPeerConnectionService == null || askCallStatus == null || mPeerCallService == null || contactId == null) {
+        if (mPeerConnectionService == null || askCallStatus == null || mPeerCallService == null || contactId == null || subjectType == null) {
             startNotification();
             return;
         }
@@ -1738,6 +1743,9 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             call.setAudioVideoState(callStatus);
             mActiveCall = call;
             mCallsContacts.put(contactId, call);
+            if (subjectType == Originator.Type.CALL_RECEIVER) {
+                call.checkOperation(CallOperation.WAIT_CONFERENCE);
+            }
         }
 
         // Invalidate the shutdown timer immediately: we have a new call.
@@ -1756,6 +1764,8 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         // because we are holding a lock on CallService.
         if (groupId != null) {
             mTwinmeContext.execute(() -> startGroupCall(groupId, askCallStatus));
+        } else if (subjectType == Originator.Type.CALL_RECEIVER) {
+            mTwinmeContext.execute(() -> startConferenceCall(contactId, askCallStatus, addParticipant));
         } else {
             mTwinmeContext.execute(() -> startContactCall(contactId, askCallStatus, addParticipant));
         }
@@ -1846,6 +1856,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         }
 
         startNotification();
+        onOperation(call);
 
         // Start the call connection once we know every member.
         for (CallConnection callConnection : connections) {
@@ -1920,7 +1931,76 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         startNotification();
 
         setOriginator(callConnection, originator);
+        onOperation(call);
         onOperation(callConnection);
+    }
+
+    private void startConferenceCall(UUID conferenceId, CallStatus callStatus, boolean addParticipant) {
+        mTwinmeContext.getCallReceiver(
+                conferenceId,
+                (ErrorCode errorCode, CallReceiver conference) -> startConferenceCall(conference, callStatus, addParticipant)
+        );
+    }
+
+    private void startConferenceCall(CallReceiver conference, CallStatus askCallStatus, boolean addParticipant) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "startConferenceCall conference=" + conference + " askCallStatus=" + askCallStatus + " addParticipant=" + addParticipant);
+        }
+
+        if (conference == null || mPeerConnectionService == null || askCallStatus == null || mPeerCallService == null) {
+            return;
+        }
+
+        // The call must exist as it should have been created by onActionOutgoingCall().
+        final CallState call = getActiveCall();
+        if (call == null) {
+            return;
+        }
+
+        // Discreet relation: do not create the CallDescriptor.
+        if (conference.getIdentityCapabilities().hasDiscreet()) {
+            call.checkOperation(CallOperation.START_CALL);
+            call.checkOperation(CallOperation.START_CALL_DONE);
+        }
+
+        final Schedule schedule = conference.getCapabilities().getSchedule();
+        if (schedule != null && !schedule.isNowInRange()) {
+            return;
+        }
+
+
+        final CallStatus callStatus;
+        if (call.isVideoSourceOn()) {
+            callStatus = CallStatus.OUTGOING_VIDEO_CALL;
+        } else {
+            callStatus = askCallStatus;
+        }
+
+        if (mCallNotifications.get(call.getId()) == null) {
+            mServiceNotification = mNotificationCenter.createOutgoingCallNotification(conference, callStatus, call.getId());
+            mCallNotifications.put(call.getId(), mServiceNotification);
+        }
+
+        Bitmap avatar = null;
+        ImageId avatarId = conference.getAvatarId();
+        if (avatarId != null) {
+            avatar = mTwinmeContext.getImageService().getImage(avatarId, ImageService.Kind.THUMBNAIL);
+        }
+
+        // Also get the identity avatar so that we can send it to group members.
+        Bitmap identityAvatar = null;
+        avatarId = conference.getIdentityAvatarId();
+        if (avatarId != null) {
+            identityAvatar = mTwinmeContext.getImageService().getImage(avatarId, ImageService.Kind.THUMBNAIL);
+        }
+
+        Bitmap groupAvatar = null;
+        // Set the call's originator if there is none.
+        call.setOriginator(conference, avatar, identityAvatar, groupAvatar);
+        call.checkOperation(CallOperation.WAIT_CONFERENCE);
+        startNotification();
+        onOperation(call);
+        sendMessage(MESSAGE_STATE);
     }
 
     private synchronized void onActionAcceptCall(@NonNull Intent intent) {
@@ -2148,12 +2228,16 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         }
 
         final List<CallConnection> connections = call.getConnections();
-        for (CallConnection callConnection : connections) {
-            if (callConnection.getStatus() != CallStatus.TERMINATED
-                    && (peerConnectionId == null || peerConnectionId.equals(callConnection.getPeerConnectionId()))) {
-                callConnection.terminate(terminateReason);
+        if (connections.isEmpty()) {
+            terminateCall(call, terminateReason, call.getStatus());
+        } else {
+            for (CallConnection callConnection : connections) {
+                if (callConnection.getStatus() != CallStatus.TERMINATED
+                        && (peerConnectionId == null || peerConnectionId.equals(callConnection.getPeerConnectionId()))) {
+                    callConnection.terminate(terminateReason);
 
-                onTerminatePeerConnection(callConnection, terminateReason);
+                    onTerminatePeerConnection(callConnection, terminateReason);
+                }
             }
         }
 
@@ -2412,26 +2496,21 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         return requestId;
     }
 
-    private synchronized void onOperation(@NonNull CallConnection callConnection) {
+    private synchronized void onOperation(@NonNull CallState call) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
         }
 
-        if (!mConnected || mPeerConnectionService == null) {
-
-            return;
-        }
-
-        final CallState call = callConnection.getCall();
-        final Originator originator = callConnection.getOriginator();
-        CallStatus mode = callConnection.getStatus();
-        final UUID peerTwincodeOutboundId = callConnection.getPeerTwincodeOutboundId();
+        //
+        // Step 1: create the audio/video call descriptor.
+        //
+        final Originator originator = call.getOriginator();
         boolean video = call.isVideoSourceOn();
-        if (originator != null && peerTwincodeOutboundId != null) {
-
+        if (originator != null) {
             UUID twincodeOutboundId = originator.getTwincodeOutboundId();
             UUID twincodeInboundId = originator.getTwincodeInboundId();
             if (twincodeOutboundId != null && twincodeInboundId != null && call.checkOperation(CallOperation.START_CALL)) {
+                CallStatus mode = call.getStatus();
 
                 long requestId = newOperation(call, CallOperation.START_CALL);
                 if (DEBUG) {
@@ -2449,11 +2528,43 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             }
         }
 
-        if (!call.isDoneOperation(CallOperation.START_CALL)) {
-
+        if (!mConnected || mPeerConnectionService == null) {
             return;
         }
 
+        // For a conference call, we have to start a joinMeeting operation and then wait for
+        // participants to join, because we are owner of the conference twincode, we also give it
+        // as our member twincode.
+        if (call.isDoneOperation(CallOperation.WAIT_CONFERENCE)) {
+            if (call.checkOperation(CallOperation.JOIN_CONFERENCE)) {
+                long requestId = newOperation(call, CallOperation.JOIN_CONFERENCE);
+                mTwinmeContext.getPeerCallService().joinMeeting(requestId, originator.getTwincodeOutboundId(), originator.getTwincodeOutboundId(), 5*60*1000);
+                return;
+            }
+            if (!call.isDoneOperation(CallOperation.JOIN_CONFERENCE_DONE)) {
+                return;
+            }
+        }
+    }
+
+    private synchronized void onOperation(@NonNull CallConnection callConnection) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onOperation");
+        }
+
+        if (!mConnected || mPeerConnectionService == null) {
+            return;
+        }
+
+        final CallState call = callConnection.getCall();
+        if (!call.isDoneOperation(CallOperation.START_CALL)) {
+            return;
+        }
+
+        final Originator originator = callConnection.getOriginator();
+        CallStatus mode = callConnection.getStatus();
+        final UUID peerTwincodeOutboundId = callConnection.getPeerTwincodeOutboundId();
+        boolean video = call.isVideoSourceOn();
         if (CallStatus.isOutgoing(mode) && peerTwincodeOutboundId != null && originator != null) {
             final TwincodeOutbound twincodeOutbound = originator.getTwincodeOutbound();
 
@@ -2570,11 +2681,11 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
             // If the call is in a callroom, we can join it now that the incoming call is accepted.
             final UUID callroomId = call.getCallRoomId();
-            if (callroomId != null && originator != null) {
+            if (callroomId != null && originator != null && !call.isDoneOperation(CallOperation.JOIN_CONFERENCE)) {
                 final UUID twincodeInboundId = originator.getTwincodeInboundId();
                 if (twincodeInboundId != null && mPeerCallService != null) {
 
-                    long requestId = newOperation(call, ConnectionOperation.JOIN_CALL_ROOM);
+                    long requestId = newOperation(call, CallOperation.JOIN_CALL_ROOM);
                     mPeerCallService.joinCallRoom(requestId, callroomId, twincodeInboundId, call.getConnectionIds());
                 }
             }
@@ -2603,7 +2714,11 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         }
 
         mConnected = true;
-
+        
+        final CallState activeCall = getActiveCall();
+        if (activeCall != null) {
+            onOperation(activeCall);
+        }
         final List<CallConnection> connections = getConnections();
         for (CallConnection callConnection : connections) {
             onOperation(callConnection);
@@ -2658,7 +2773,13 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
         final boolean video = callState.isVideoSourceOn();
         final CallStatus mode = video ? CallStatus.OUTGOING_VIDEO_CALL : CallStatus.OUTGOING_CALL;
+        callState.checkOperation(CallOperation.JOIN_CONFERENCE_DONE);
         callState.updateCallRoom(callRoomId, memberId, members);
+
+        // If there are members, also mark the incoming peer connection done to record we are not waiting anymore.
+        if (!members.isEmpty()) {
+            callState.checkOperation(CallOperation.CREATE_INCOMING_PEER_CONNECTION_DONE);
+        }
         for (PeerCallService.MemberInfo member : members) {
             List<CallConnection> connections = getConnections();
             if (member.status != PeerCallService.MemberStatus.NEW_MEMBER_NEED_SESSION) {
@@ -2667,7 +2788,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
                 if (callConnection != null) {
                     // We have a P2P connection with this member, make sure we don't invite it again.
                     callConnection.setCallMemberId(member.memberId);
-                    callConnection.checkOperation(ConnectionOperation.INVITE_CALL_ROOM);
+                    callConnection.checkOperation(CallOperation.INVITE_CALL_ROOM);
 
                     // Cleanup: sometimes 2 peers in a group call will establish several P2P connections between themselves,
                     // for example when re-joining a group call.
@@ -2773,7 +2894,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             // with our P2P sessions (again) and we will establish P2P connections if needed.
             final CallState activeCall = getActiveCall();
             if (activeCall != null && callRoomId.equals(activeCall.getCallRoomId())) {
-                final long requestId = newOperation(activeCall, ConnectionOperation.JOIN_CALL_ROOM);
+                final long requestId = newOperation(activeCall, CallOperation.JOIN_CALL_ROOM);
                 activeCall.joinCallRoom(requestId, callRoomId, maxCount);
             }
             return;
@@ -2808,7 +2929,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             mergeCalls();
         }
 
-        final long requestId = newOperation(callState, ConnectionOperation.JOIN_CALL_ROOM);
+        final long requestId = newOperation(callState, CallOperation.JOIN_CALL_ROOM);
         callState.joinCallRoom(requestId, callRoomId, maxCount);
     }
 
@@ -3142,8 +3263,8 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             }
             stopRingtone();
 
-            if (!callConnection.isInvited() && call.checkOperation(ConnectionOperation.CREATE_CALL_ROOM)) {
-                long requestId = newOperation(callConnection, ConnectionOperation.CREATE_CALL_ROOM);
+            if (!callConnection.isInvited() && call.checkOperation(CallOperation.CREATE_CALL_ROOM)) {
+                long requestId = newOperation(callConnection, CallOperation.CREATE_CALL_ROOM);
                 call.createCallRoom(requestId);
             }
 
@@ -3156,9 +3277,9 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
             stopRingtone();
 
             // This new member is not yet part of the call group, send it an invitation to join.
-            if (!callConnection.isInvited() && callConnection.checkOperation(ConnectionOperation.INVITE_CALL_ROOM)) {
+            if (!callConnection.isInvited() && callConnection.checkOperation(CallOperation.INVITE_CALL_ROOM)) {
 
-                long requestId = newOperation(callConnection, ConnectionOperation.INVITE_CALL_ROOM);
+                long requestId = newOperation(callConnection, CallOperation.INVITE_CALL_ROOM);
                 call.inviteCallRoom(requestId, callConnection);
             }
         }
@@ -3786,7 +3907,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
 
         final CallState call = callConnection != null ? callConnection.getCall() : null;
 
-        if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+        if (errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) {
             switch (operationId) {
                 case CallOperation.START_CALL:
                     if (call != null) {

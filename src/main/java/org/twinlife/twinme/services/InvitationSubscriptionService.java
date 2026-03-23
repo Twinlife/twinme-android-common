@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2023-2024 twinlife SA.
+ *  Copyright (c) 2023-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -321,8 +321,8 @@ public class InvitationSubscriptionService extends AbstractTwinmeService {
 
             // First call to onGetTwincode to give the twincode name.
             runOnGetTwincode(mObserver, twincodeOutbound, null);
-        } else if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
-            runOnGetTwincodeNotFound(mObserver);
+        } else if (errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) {
+            runOnGetTwincodeNotFound(mObserver, errorCode);
         } else {
             onError(GET_TWINCODE, errorCode, null);
         }

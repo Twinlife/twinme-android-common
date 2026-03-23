@@ -537,7 +537,7 @@ public class ConversationService extends AbstractTwinmeService {
     }
 
     public void listAnnotations(@NonNull DescriptorId descriptorId,
-                                @NonNull TwinmeContext.ConsumerWithError<Map<TwincodeOutbound, DescriptorAnnotation>> consumer) {
+                                @NonNull TwinmeContext.ConsumerWithError<Map<TwincodeOutbound, List<DescriptorAnnotation>>> consumer) {
         if (DEBUG) {
             Log.d(LOG_TAG, "listAnnotations: descriptorId=" + descriptorId);
         }
@@ -647,7 +647,7 @@ public class ConversationService extends AbstractTwinmeService {
         return mFiles != null && (!mFiles.isEmpty() || mCurrentFile != null);
     }
 
-    public void toggleAnnotation(@NonNull DescriptorId descriptorId, AnnotationType annotationType, int value) {
+    public void toggleAnnotation(@NonNull DescriptorId descriptorId, AnnotationType annotationType, long value) {
         if (DEBUG) {
             Log.d(LOG_TAG, "setAnnotation: setAnnotation=" + descriptorId + " annotationType=" + annotationType + " value=" + value);
         }

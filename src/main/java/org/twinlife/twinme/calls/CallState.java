@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022-2025 twinlife SA.
+ *  Copyright (c) 2022-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -357,8 +357,13 @@ public final class CallState extends DescriptorFactory {
     @NonNull
     public synchronized CallStatus getStatus() {
 
+        if (mTerminateReason != null) {
+            return CallStatus.TERMINATED;
+        }
+        if ((mState & CallOperation.WAIT_CONFERENCE) != 0 && (mState & CallOperation.CREATE_INCOMING_PEER_CONNECTION_DONE) == 0) {
+            return CallStatus.CALL_WAITING;
+        }
         if (mPeers.isEmpty()) {
-
             return CallStatus.TERMINATED;
         }
 
@@ -1503,7 +1508,7 @@ public final class CallState extends DescriptorFactory {
 
         final Originator originator;
         synchronized (this) {
-            mState |= ConnectionOperation.CREATE_CALL_ROOM | ConnectionOperation.CREATE_CALL_ROOM_DONE;
+            mState |= CallOperation.CREATE_CALL_ROOM | CallOperation.CREATE_CALL_ROOM_DONE;
             mCallRoomId = callRoomId;
             mMaxMemberCount = Math.min(MAX_MEMBER_UI_SUPPORTED, maxMemberCount);
             originator = mOriginator;
@@ -1528,7 +1533,7 @@ public final class CallState extends DescriptorFactory {
             Log.d(LOG_TAG, "joinCallRoom: callRoomId=" + callRoomId);
         }
 
-        mState |= ConnectionOperation.CREATE_CALL_ROOM | ConnectionOperation.CREATE_CALL_ROOM_DONE;
+        mState |= CallOperation.CREATE_CALL_ROOM | CallOperation.CREATE_CALL_ROOM_DONE;
         mCallRoomId = callRoomId;
         mMaxMemberCount = Math.min(MAX_MEMBER_UI_SUPPORTED, maxMemberCount);
     }
@@ -1546,7 +1551,7 @@ public final class CallState extends DescriptorFactory {
                     + " memberId=" + memberId);
         }
 
-        mState |= ConnectionOperation.CREATE_CALL_ROOM | ConnectionOperation.CREATE_CALL_ROOM_DONE;
+        mState |= CallOperation.CREATE_CALL_ROOM | CallOperation.CREATE_CALL_ROOM_DONE;
         mCallRoomId = callRoomId;
         mCallRoomMemberId = memberId;
     }

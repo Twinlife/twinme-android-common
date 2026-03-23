@@ -194,6 +194,18 @@ public class AdminService {
         }
     }
 
+    private class BackupServiceObserver implements org.twinlife.twinlife.BackupService.ServiceObserver {
+        @Override
+        public void onTerminateRestore(@NonNull org.twinlife.twinlife.BackupService.TerminateReason terminateReason) {
+            if (DEBUG) {
+                Log.d(LOG_TAG, "onTerminateRestore: terminateReason=" + terminateReason);
+            }
+
+            if (terminateReason == org.twinlife.twinlife.BackupService.TerminateReason.SUCCESS) {
+                AdminService.this.setPushNotificationToken();
+            }
+        }
+    }
 
     @NonNull
     private final TwinmeContext mTwinmeContext;
@@ -205,6 +217,8 @@ public class AdminService {
     private final Map<Long, Integer> mRequestIds = new HashMap<>();
     private boolean mRestarted = false;
     private final ConversationServiceObserver mConversationServiceObserver;
+    private final BackupServiceObserver mBackupServiceObserver;
+
     @NonNull
     private final TwinmeApplication mApplication;
 
@@ -246,6 +260,7 @@ public class AdminService {
 
         TwinmeContextObserver twinmeContextObserver = new TwinmeContextObserver();
         mConversationServiceObserver = new ConversationServiceObserver();
+        mBackupServiceObserver = new BackupServiceObserver();
 
         mApplication = application;
         mTwinmeContext.setObserver(twinmeContextObserver);
@@ -449,6 +464,29 @@ public class AdminService {
         }
 
         mTwinmeContext.getJobService().scheduleIn("Update scores", this::updateScoreJob, delay, JobService.Priority.REPORT);
+    }
+
+    public void setPushNotificationToken() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "setPushNotificationToken");
+        }
+
+        try {
+            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
+                if (!task.isSuccessful() || task.getResult() == null) {
+                    Log.w(LOG_TAG, "Cannot get Firebase token: " + task.getException());
+                    return;
+                }
+
+                // Get new Instance ID token
+                String pushNotificationToken = task.getResult();
+                mTwinmeContext.getManagementService().setPushNotificationToken(ManagementService.PUSH_NOTIFICATION_FIREBASE_VARIANT, pushNotificationToken);
+            });
+
+        } catch (Exception exception) {
+            // Exceptions can be raised because we cannot trust FCM.
+            Log.w(LOG_TAG, "Firebase exception: " + exception.getMessage());
+        }
     }
 
     private void onTwinlifeOnline() {
