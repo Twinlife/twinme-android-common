@@ -462,7 +462,7 @@ public class ShareProfileService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
         }
 
-        if (errorCode == ErrorCode.ITEM_NOT_FOUND && operationId == CHANGE_PROFILE_TWINCODE) {
+        if ((errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) && operationId == CHANGE_PROFILE_TWINCODE) {
             // It can happen that a profile is removed while an changeProfileTwincode() operation was made.
             mState |= CHANGE_PROFILE_TWINCODE;
 

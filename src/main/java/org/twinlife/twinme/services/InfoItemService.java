@@ -311,7 +311,7 @@ public class InfoItemService extends AbstractTwinmeService {
             }
         } else if (operationId == GET_GROUP || operationId == LIST_GROUP_MEMBER) {
 
-            if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+            if (errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) {
                 runOnGetGroupNotFound(mObserver);
                 return;
             }

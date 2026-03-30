@@ -1275,7 +1275,7 @@ public class ConversationService extends AbstractTwinmeService {
             nextPushFile();
         }
 
-        if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+        if (errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) {
             switch (operationId) {
                 case GET_CONTACT:
                 case GET_GROUP:

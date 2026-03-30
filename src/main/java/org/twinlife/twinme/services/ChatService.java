@@ -217,7 +217,7 @@ public class ChatService extends AbstractTwinmeService {
                 Log.d(LOG_TAG, "ConversationServiceObserver.onUpdateDescriptor: requestId=" + requestId + " conversation=" + conversation + " descriptor=" + descriptor + " updateType=" + updateType);
             }
 
-            if (updateType == ConversationService.UpdateType.CONTENT && descriptor.getType() != Descriptor.Type.OBJECT_DESCRIPTOR) {
+            if (updateType == ConversationService.UpdateType.CONTENT && descriptor.getType() != Descriptor.Type.OBJECT_DESCRIPTOR && descriptor.getType() != Descriptor.Type.CALL_DESCRIPTOR) {
 
                 return;
             }
@@ -988,7 +988,7 @@ public class ChatService extends AbstractTwinmeService {
             return;
         }
 
-        if (errorCode == ErrorCode.ITEM_NOT_FOUND  && operationId == GET_GROUP_MEMBER) {
+        if ((errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) && operationId == GET_GROUP_MEMBER) {
             mState |= GET_GROUP_MEMBER_DONE;
             nextGroupMember();
             return;

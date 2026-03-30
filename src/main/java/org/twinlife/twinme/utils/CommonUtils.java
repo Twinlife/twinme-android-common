@@ -951,7 +951,7 @@ public class CommonUtils {
         return dateToString + "\n" + timeToString;
     }
 
-    public static String formatBackupInterval(Context context, long timestamp) {
+    public static String formatBackupInterval(Context context, long timestamp, boolean isLastBackup) {
 
         Date date = new Date(timestamp);
         Date now = new Date();
@@ -961,7 +961,9 @@ public class CommonUtils {
 
         String formatDate = "";
         String dateToString = "";
-        if (isYesterday(timestamp)) {
+        if (isLastBackup) {
+            formatDate = "dd/MM/yyyy";
+        } else if (isYesterday(timestamp)) {
             dateToString = DateUtils.getRelativeTimeSpanString(date.getTime(), now.getTime(), DateUtils.DAY_IN_MILLIS).toString();
         } else if (dayAgo < 6 && !DateUtils.isToday(timestamp)) {
             formatDate = "EEEE";

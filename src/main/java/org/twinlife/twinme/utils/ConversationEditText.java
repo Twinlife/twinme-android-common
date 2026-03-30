@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021 twinlife SA.
+ *  Copyright (c) 2021-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -16,6 +16,7 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.view.inputmethod.EditorInfoCompat;
 import androidx.core.view.inputmethod.InputConnectionCompat;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
@@ -38,9 +39,13 @@ public class ConversationEditText extends androidx.appcompat.widget.AppCompatEdi
     }
 
     @Override
+    @Nullable
     public InputConnection onCreateInputConnection(@NonNull EditorInfo outAttrs) {
 
         final InputConnection inputConnection = super.onCreateInputConnection(outAttrs);
+        if (inputConnection == null) {
+            return null;
+        }
         EditorInfoCompat.setContentMimeTypes(outAttrs, mSupportedMimeType);
 
         final InputConnectionCompat.OnCommitContentListener callback = (inputContentInfo, flags, opts) -> {

@@ -453,14 +453,14 @@ public class AdminService {
             mLastVersion = mApplication.getLastVersion();
         }
 
-        Utils.cleanupTemporaryDirectory(mApplication.getCacheDir());
+        Utils.cleanupTemporaryDirectory(mApplication.getCacheDir(), System.currentTimeMillis() - 300L * 1000L);
         File dir = new File(mApplication.getFilesDir(), Twinlife.OLD_TMP_DIR);
         if (dir.exists()) {
-            Utils.cleanupTemporaryDirectory(dir);
+            Utils.cleanupTemporaryDirectory(dir, 0);
         }
         dir = new File(mApplication.getFilesDir(), Twinlife.TMP_DIR);
         if (dir.exists()) {
-            Utils.cleanupTemporaryDirectory(dir);
+            Utils.cleanupTemporaryDirectory(dir, 0);
         }
 
         mTwinmeContext.getJobService().scheduleIn("Update scores", this::updateScoreJob, delay, JobService.Priority.REPORT);

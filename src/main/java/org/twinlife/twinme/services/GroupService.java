@@ -1079,7 +1079,7 @@ public class GroupService extends AbstractTwinmeService {
             return;
         }
 
-        if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+        if (errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) {
             switch (operationId) {
                 case GET_GROUP:
                 case UPDATE_GROUP:

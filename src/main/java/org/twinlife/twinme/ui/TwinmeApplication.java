@@ -174,6 +174,8 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
 
     void updateHapticFeedbackMode(HapticFeedbackMode hapticFeedbackMode);
 
+    boolean hapticFeedbackModeEnable();
+
     int defaultTab();
 
     void updateDefaultTab(DefaultTab defaultTab);
@@ -356,6 +358,10 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     boolean showBackupWarning();
 
     void setLastBackupDate();
+
+    void clearLastBackupDate();
+
+    long getLastBackupDate();
 
     void setFirstInstallationBackupDate();
 

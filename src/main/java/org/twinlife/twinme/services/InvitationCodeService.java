@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2025 twinlife SA.
+ *  Copyright (c) 2025-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -14,7 +14,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
+import org.twinlife.twinlife.BaseService.ErrorCode;
 import org.twinlife.twinlife.Filter;
 import org.twinlife.twinlife.ImageId;
 import org.twinlife.twinlife.ImageService;
@@ -132,7 +132,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
         }
 
         @Override
-        public void onError(long requestId, BaseService.ErrorCode errorCode, String errorParameter) {
+        public void onError(long requestId, ErrorCode errorCode, String errorParameter) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "InvitationCodeService.TwinmeContextObserver.onError: requestId=" + requestId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
             }
@@ -427,7 +427,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
                 if (DEBUG) {
                     Log.d(LOG_TAG, "ImageService.getImage: imageId=" + mTwincodeAvatarId);
                 }
-                mTwinmeContext.getImageService().getImageFromServer(mTwincodeAvatarId, ImageService.Kind.THUMBNAIL, (BaseService.ErrorCode errorCode, Bitmap image) -> {
+                mTwinmeContext.getImageService().getImageFromServer(mTwincodeAvatarId, ImageService.Kind.THUMBNAIL, (ErrorCode errorCode, Bitmap image) -> {
                     onGetTwincodeImage(image);
                     mState |= GET_TWINCODE_IMAGE_DONE;
                     onOperation();
@@ -618,7 +618,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
         onOperation();
     }
 
-    private void onGetCurrentSpace(@NonNull BaseService.ErrorCode errorCode, @Nullable Space space) {
+    private void onGetCurrentSpace(@NonNull ErrorCode errorCode, @Nullable Space space) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onGetCurrentSpace: space=" + space);
         }
@@ -688,12 +688,12 @@ public class InvitationCodeService extends AbstractTwinmeService {
     }
 
     @Override
-    protected void onError(int operationId, BaseService.ErrorCode errorCode, @Nullable String errorParameter) {
+    protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
         }
 
-        if (errorCode == BaseService.ErrorCode.ITEM_NOT_FOUND && operationId == GET_INVITATION_CODE) {
+        if ((errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) && operationId == GET_INVITATION_CODE) {
             runOnUiThread(() -> {
                 if (mObserver != null) {
                     mObserver.onGetInvitationCodeNotFound();
