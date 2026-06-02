@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017-2025 twinlife SA.
+ *  Copyright (c) 2017-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -29,6 +29,7 @@ import org.twinlife.twinlife.ConversationService.DescriptorId;
 import org.twinlife.twinlife.ConversationService.GroupConversation;
 import org.twinlife.twinlife.ConversationService.InvitationDescriptor;
 import org.twinlife.twinlife.ConversationService.MemberFilter;
+import org.twinlife.twinlife.ConversationService.PollDescriptor;
 import org.twinlife.twinlife.ConversationService.UpdateType;
 import org.twinlife.twinlife.ConversationService.AnnotationType;
 import org.twinlife.twinlife.DisplayCallsMode;
@@ -80,6 +81,7 @@ public class ConversationService extends AbstractTwinmeService {
     private static final int SAVE_GEOLOCATION_MAP = 1 << 24;
     private static final int PUSH_FILE = 1 << 25;
     private static final int UPDATE_DESCRIPTOR = 1 << 26;
+    private static final int PUSH_POLL = 1 << 27;
 
     public interface Observer extends AbstractTwinmeService.Observer, ContactObserver {
 
@@ -204,7 +206,7 @@ public class ConversationService extends AbstractTwinmeService {
         }
 
         @Override
-        public void onUpdateAnnotation(long requestId, @NonNull Conversation conversation, @NonNull Descriptor descriptor, @NonNull TwincodeOutbound annotatingUser) {
+        public void onUpdateAnnotation(long requestId, @NonNull Conversation conversation, @NonNull Descriptor descriptor, @NonNull TwincodeOutbound annotatingUser, @NonNull Set<DescriptorAnnotation> updatedAnnotations) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "ConversationServiceObserver.onUpdateAnnotation: requestId=" + requestId + " conversation=" + conversation + " descriptor=" + descriptor +
                         " annotatingUser=" + annotatingUser);
@@ -594,14 +596,14 @@ public class ConversationService extends AbstractTwinmeService {
         }
     }
 
-    public void pushGeolocation(double longitude, double latitude, double altitude, double mapLongitudeDelta, double mapLatitudeDelta, long expireTimeout, DescriptorId replyTo) {
+    public void pushGeolocation(double longitude, double latitude, double altitude, double mapLongitudeDelta, double mapLatitudeDelta, long expireTimeout, DescriptorId replyTo, boolean copyAllowed) {
         if (DEBUG) {
             Log.d(LOG_TAG, "pushGeolocation: longitude=" + longitude + " latitude=" + latitude + " altitude=" + altitude + " mapLongitudeDelta=" + mapLongitudeDelta + " mapLatitudeDelta=" + mapLatitudeDelta + " expireTimeout=" + expireTimeout);
         }
 
         if (mConversation != null) {
             long requestId = newOperation(PUSH_GEOLOCATION);
-            mTwinmeContext.pushGeolocation(requestId, mConversation, null, replyTo, longitude, latitude, altitude, mapLongitudeDelta, mapLatitudeDelta, null, expireTimeout * 1000);
+            mTwinmeContext.pushGeolocation(requestId, mConversation, null, replyTo, longitude, latitude, altitude, mapLongitudeDelta, mapLatitudeDelta, null, expireTimeout * 1000, copyAllowed);
         }
     }
 
@@ -640,6 +642,27 @@ public class ConversationService extends AbstractTwinmeService {
             mFiles.add(new FileInfo(file, filename, type, toDelete, allowCopy, sendTo, replyTo, expireTimeout));
         }
         startOperation();
+    }
+
+    public void pushPoll(boolean multipleAnswersAllowed, @NonNull String question, @NonNull List<PollDescriptor.Choice> choices, boolean allowCopy, long expireTimeout) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "pushPoll: multipleAnswersAllowed=" + multipleAnswersAllowed + " question=" + question + " choices=" + choices);
+        }
+
+        if (mConversation != null) {
+            long requestId = newOperation(PUSH_POLL);
+            mTwinmeContext.pushPoll(requestId, mConversation, null, multipleAnswersAllowed, question, choices, allowCopy, expireTimeout);
+        }
+    }
+
+    public void submitPollVotes(@NonNull DescriptorId descriptorId, @NonNull List<PollDescriptor.Choice> choices) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "submitPollVotes: descriptorId=" + descriptorId + " choices=" + choices);
+        }
+
+        long value = PollDescriptor.Choice.toAnnotationValue(choices);
+
+        mTwinmeContext.setAnnotation(descriptorId, AnnotationType.POLL, value);
     }
 
     public synchronized boolean isSendingFiles() {

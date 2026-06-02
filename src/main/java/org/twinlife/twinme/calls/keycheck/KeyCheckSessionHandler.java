@@ -445,7 +445,7 @@ public class KeyCheckSessionHandler {
 
         if (Boolean.TRUE.equals(isOK()) && mTwincodeURI != null && mTwincodeURI.pubKey != null) {
 
-            RepositoryService.FindResult result = mTwinmeContext.getRepositoryService().findWithSignature(mTwincodeURI.pubKey, CONTACT_FACTORY);
+            RepositoryService.FindResult result = mTwinmeContext.getRepositoryService().findWithSignature(mTwincodeURI.pubKey.asString(), CONTACT_FACTORY);
 
             if (result.errorCode != ErrorCode.SUCCESS || !(result.object instanceof Contact)) {
                 Log.e(LOG_TAG, "Contact not found: errorCode=" + result.errorCode + " object=" + result.object);

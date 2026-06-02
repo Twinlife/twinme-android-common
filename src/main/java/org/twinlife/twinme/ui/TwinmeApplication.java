@@ -164,6 +164,11 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
 
     boolean visualizationLink();
 
+    default boolean visualizationMap(){
+        //NOOP, implemented in Skred
+        return true;
+    }
+
     void updateEmojiFontSize(EmojiSize emojiSize);
 
     int displayMode();
@@ -356,6 +361,8 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     //
 
     boolean showBackupWarning();
+
+    void setLastBackupAlertDate();
 
     void setLastBackupDate();
 

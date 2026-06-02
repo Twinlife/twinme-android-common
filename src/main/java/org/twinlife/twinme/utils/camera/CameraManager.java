@@ -116,4 +116,6 @@ public interface CameraManager {
     void setZoom(int zoom);
 
     int getMaxZoom();
+
+    void updateTextureSize();
 }

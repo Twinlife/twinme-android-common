@@ -818,27 +818,22 @@ public class TwinmeAudioManager implements CallAudioManager {
             return false;
         }
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            //noinspection deprecation
-            return audioManager.isWiredHeadsetOn();
-        } else {
-            final AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
-            for (AudioDeviceInfo device : devices) {
-                final int type = device.getType();
-                if (type == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
-                    if (DEBUG) {
-                        Log.d(LOG_TAG, "hasWiredHeadset: found wired headset");
-                    }
-                    return true;
-                } else if (type == AudioDeviceInfo.TYPE_USB_DEVICE) {
-                    if (DEBUG) {
-                        Log.d(LOG_TAG, "hasWiredHeadset: found USB audio device");
-                    }
-                    return true;
+        final AudioDeviceInfo[] devices = audioManager.getDevices(AudioManager.GET_DEVICES_INPUTS);
+        for (AudioDeviceInfo device : devices) {
+            final int type = device.getType();
+            if (type == AudioDeviceInfo.TYPE_WIRED_HEADSET) {
+                if (DEBUG) {
+                    Log.d(LOG_TAG, "hasWiredHeadset: found wired headset");
                 }
+                return true;
+            } else if (type == AudioDeviceInfo.TYPE_USB_DEVICE) {
+                if (DEBUG) {
+                    Log.d(LOG_TAG, "hasWiredHeadset: found USB audio device");
+                }
+                return true;
             }
-            return false;
         }
+        return false;
     }
 
     /**

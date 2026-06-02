@@ -10,6 +10,9 @@ package org.twinlife.twinme.utils.update;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
+
+import java.io.File;
 import java.util.List;
 
 public interface LastVersion {
@@ -55,5 +58,5 @@ public interface LastVersion {
 
     List<String>  getListMajorChanges();
 
-    void save(Context ctx);
+    void save(@NonNull File cacheDir);
 }

@@ -24,6 +24,7 @@ import org.twinlife.twinlife.ConversationService.Descriptor;
 import org.twinlife.twinlife.ConversationService.TwincodeDescriptor;
 import org.twinlife.twinlife.ConversationService.DescriptorId;
 import org.twinlife.twinlife.ConversationService.Conversation;
+import org.twinlife.twinlife.CryptoService;
 import org.twinlife.twinlife.Filter;
 import org.twinlife.twinlife.ImageId;
 import org.twinlife.twinlife.ImageService;
@@ -196,7 +197,7 @@ public class AcceptInvitationService extends AbstractTwinmeService {
     @Nullable
     private Space mSpace;
     @Nullable
-    private String mPublicKey;
+    private CryptoService.PublicKeyData mPublicKey;
     @Nullable
     private TrustMethod mTrustMethod;
 

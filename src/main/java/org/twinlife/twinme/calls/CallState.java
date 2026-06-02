@@ -606,7 +606,7 @@ public final class CallState extends DescriptorFactory {
         ThreadUtils.checkIsOnMainThread();
 
         if (mCurrentGeolocation == null) {
-            mCurrentGeolocation = createGeolocation(longitude, latitude, altitude, mapLongitudeDelta, mapLatitudeDelta);
+            mCurrentGeolocation = createGeolocation(longitude, latitude, altitude, mapLongitudeDelta, mapLatitudeDelta, false);
             return sendDescriptor(mCurrentGeolocation);
         }
 

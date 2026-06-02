@@ -1,33 +1,40 @@
 /*
- *  Copyright (c) 2022-2025 twinlife SA.
+ *  Copyright (c) 2022-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *   Fabrice Trescartes (Fabrice.Trescartes@twin.life)
+ *   Stephane Carrez (Stephane.Carrez@twin.life)
  */
 
 package org.twinlife.twinme.utils.update;
 
-import android.content.Context;
-import android.os.AsyncTask;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.twinlife.twinlife.util.EventMonitor;
+import org.twinlife.twinlife.util.Logger;
+import org.twinlife.twinme.TwinmeContext;
+import org.twinlife.twinme.actions.BackgroundAction;
+import org.twinlife.twinme.actions.TwinmeAction;
 
 import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-public class LastVersionAsyncTask extends AsyncTask<String, String, String> {
+public class LastVersionAction extends BackgroundAction {
+    private static final String LOG_TAG = "LastVersionAction";
+    private static final boolean DEBUG = false;
 
     // public static final String LAST_VERSION_URL = BuildConfig.CHECK_VERSION_URL;
     public static final String VERSION_KEY = "version";
@@ -41,23 +48,29 @@ public class LastVersionAsyncTask extends AsyncTask<String, String, String> {
 
     @NonNull
     private final LastVersion mLastVersion;
-    @NonNull
-    private final WeakReference<Context> mContext;
     private final String mUrl;
+    @NonNull
+    private final File mCacheDir;
 
-    public LastVersionAsyncTask(@NonNull Context context, @NonNull LastVersion lastVersion, @NonNull String url) {
+    public LastVersionAction(@NonNull TwinmeContext twinmeContext, @NonNull LastVersion lastVersion, @NonNull String url) {
+        super(twinmeContext, CONNECT_TIMEOUT);
+        if (DEBUG) {
+            Log.d(LOG_TAG, "LastVersionAction twinmeContext=" + twinmeContext + " lastVersion=" + lastVersion + " url=" + url);
+        }
 
-        mContext = new WeakReference<>(context);
+        mCacheDir = twinmeContext.getCacheDir();
         mLastVersion = lastVersion;
         mUrl = url;
     }
 
     @Override
-    protected String doInBackground(String... strings) {
+    protected void execute() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "fetchVersion " + mUrl);
+        }
 
         URL url;
         HttpURLConnection connection = null;
-        BufferedReader reader = null;
 
         try {
             url = new URL(mUrl);
@@ -69,8 +82,7 @@ public class LastVersionAsyncTask extends AsyncTask<String, String, String> {
             connection.connect();
             try (InputStream stream = connection.getInputStream()) {
 
-                reader = new BufferedReader(new InputStreamReader(stream));
-
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
                 StringBuilder buffer = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -78,28 +90,25 @@ public class LastVersionAsyncTask extends AsyncTask<String, String, String> {
                     buffer.append("\n");
                 }
 
-                return buffer.toString();
+                saveVersion(buffer.toString());
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            if (Logger.ERROR) {
+                Log.e(LOG_TAG, "fetchVersion Exception", e);
+            }
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
-            try {
-                if (reader != null) {
-                    reader.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
-        return null;
+        EventMonitor.event("fetchVersion", mStartTime);
     }
 
-    @Override
-    protected void onPostExecute(String result) {
-        super.onPostExecute(result);
+    private void saveVersion(@Nullable String result) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "saveVersion " + result);
+        }
+
         if (result != null) {
             try {
                 JSONObject jsonObject = new JSONObject(result);
@@ -147,14 +156,13 @@ public class LastVersionAsyncTask extends AsyncTask<String, String, String> {
                 }
 
                 // Save the information in a cache file when everything is loaded.
-                Context ctx = mContext.get();
-                if (ctx != null) {
-                    mLastVersion.save(ctx);
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
+                mLastVersion.save(mCacheDir);
 
+            } catch (JSONException e) {
+                if (Logger.ERROR) {
+                    Log.e(LOG_TAG, "Exception when parsing JSON: ", e);
+                }
+            }
         }
     }
 }

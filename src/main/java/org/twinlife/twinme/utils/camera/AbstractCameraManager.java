@@ -311,6 +311,17 @@ public abstract class AbstractCameraManager implements CameraManager {
 
     protected abstract void setZoomInternal();
 
+    @Override
+    public void updateTextureSize() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "updateTextureSize");
+        }
+
+        if (isOpened()) {
+            mCameraHandler.post(this::setSizes);
+        }
+    }
+
     protected void setSizes() {
         if (DEBUG) {
             Log.d(LOG_TAG, "setSizes");

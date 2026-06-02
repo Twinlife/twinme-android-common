@@ -33,7 +33,7 @@ import org.twinlife.twinme.TwinmeApplicationImpl;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.CallReceiver;
 import org.twinlife.twinme.models.Contact;
-import org.twinlife.twinme.models.GroupMember;
+import org.twinlife.twinme.models.Group;
 import org.twinlife.twinme.models.Profile;
 import org.twinlife.twinme.models.Space;
 import org.twinlife.twinme.models.SpaceSettings;
@@ -65,7 +65,8 @@ public class BackupService extends Service {
             Space.SCHEMA_ID,
             Profile.SCHEMA_ID,
             Contact.SCHEMA_ID,
-            CallReceiver.SCHEMA_ID
+            CallReceiver.SCHEMA_ID,
+            Group.SCHEMA_ID
     );
 
     public static final String ACTION_START_BACKUP = "org.twinlife.device.android.twinme.START_BACKUP";
@@ -131,24 +132,21 @@ public class BackupService extends Service {
 
         private RestoreReport(@NonNull RestoreContent restoreContent) {
             this.contacts = restoreContent.getStats(Contact.SCHEMA_ID);
-            // We only consider twincodes which belong to us (isOwner() == true), so we can't count
-            // the group twincodes as we won't have the twincodes of the groups created by others.
-            // Twincodes belonging to other group members won't be counted as we're not their owner.
-            this.groups = restoreContent.getStats(GroupMember.SCHEMA_ID);
+            this.groups = restoreContent.getStats(Group.SCHEMA_ID);
             this.profiles = restoreContent.getStats(Profile.SCHEMA_ID);
             this.clickToCall = restoreContent.getStats(CallReceiver.SCHEMA_ID);
         }
 
         private RestoreReport(@NonNull VerifyReport verifyReport) {
             this.contacts = verifyReport.getStats(Contact.SCHEMA_ID);
-            this.groups = verifyReport.getStats(GroupMember.SCHEMA_ID);
+            this.groups = verifyReport.getStats(Group.SCHEMA_ID);
             this.profiles = verifyReport.getStats(Profile.SCHEMA_ID);
             this.clickToCall = verifyReport.getStats(CallReceiver.SCHEMA_ID);
         }
 
         public boolean isRestoreUpToDate() {
 
-            return contacts.isStatsUpToDate() && profiles.isStatsUpToDate() && clickToCall.isStatsUpToDate();
+            return contacts.isStatsUpToDate() && profiles.isStatsUpToDate() && clickToCall.isStatsUpToDate() && groups.isStatsUpToDate();
         }
     }
 

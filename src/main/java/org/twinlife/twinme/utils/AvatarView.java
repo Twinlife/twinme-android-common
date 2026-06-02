@@ -131,6 +131,8 @@ public class AvatarView extends View {
                 mPaintBackground.setAntiAlias(true);
                 mPaintBackground.setStyle(Paint.Style.FILL);
                 mPaintBackground.setColor(bgColor);
+            } else {
+                mPaintBackground = null;
             }
             mPaint = new Paint();
             mPaint.setAntiAlias(true);
@@ -147,10 +149,16 @@ public class AvatarView extends View {
                 mPaintBorder.setStyle(Paint.Style.STROKE);
                 mPaintBorder.setStrokeWidth(borderWidth);
                 mPaintBorder.setColor(color);
+            } else {
+                mPaintBorder = null;
             }
 
-            invalidate();
+        } else {
+            mPaint = null;
+            mPaintBackground = null;
+            mPaintBorder = null;
         }
+        invalidate();
     }
 
     private static final class AvatarViewTarget extends CustomViewTarget<AvatarView, Bitmap> {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022-2025 twinlife SA.
+ *  Copyright (c) 2022-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -12,7 +12,6 @@ package org.twinlife.twinme.utils.async;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.AsyncTask;
 import android.text.Html;
 import android.util.Log;
 
@@ -20,7 +19,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.twinlife.twinlife.ConversationService;
+import org.twinlife.twinlife.util.EventMonitor;
 import org.twinlife.twinme.TwinmeContext;
+import org.twinlife.twinme.actions.BackgroundAction;
 import org.twinlife.twinme.utils.CommonUtils;
 
 import java.io.BufferedInputStream;
@@ -40,13 +41,14 @@ import java.util.regex.Pattern;
 public class LinkLoader<T> implements Loader<T> {
     private static final String LOG_TAG = "LinkLoader";
     private static final boolean DEBUG = false;
+    private static final int TIMEOUT = 20 * 1000;
 
     public interface LinkObserver<T> {
 
         void onLinkMetadataLoaded(T item);
     }
 
-    private static class LinkMetadataAsyncTask<T> extends AsyncTask<String, Void, String> {
+    private static class LinkMetadataBackgroundAction<T> extends BackgroundAction {
 
         private static final Pattern OPEN_GRAPH_PATTERN = Pattern.compile("<\\s*meta[^>]*property\\s*=\\s*\"\\s*og:([^\"]+)\"[^>]*/?\\s*>");
         private static final Pattern CONTENT_PATTERN = Pattern.compile("content\\s*=\\s*\"([^\"]*)\"");
@@ -60,7 +62,8 @@ public class LinkLoader<T> implements Loader<T> {
         private final URL mURL;
         private String mHtml;
 
-        public LinkMetadataAsyncTask(LinkLoader<T> linkLoader, @NonNull URL url) {
+        public LinkMetadataBackgroundAction(@NonNull TwinmeContext twinmeContext, LinkLoader<T> linkLoader, @NonNull URL url) {
+            super(twinmeContext, TIMEOUT);
 
             mURL = url;
             mLinkLoader = linkLoader;
@@ -89,7 +92,7 @@ public class LinkLoader<T> implements Loader<T> {
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        protected void execute() {
 
             HttpURLConnection urlConnection = null;
             try {
@@ -107,31 +110,24 @@ public class LinkLoader<T> implements Loader<T> {
                             count++;
                         }
                     }
-                    return result.toString();
+                    parseHtml(result.toString());
                 }
-                return null;
 
             } catch (Throwable exception) {
                 if (DEBUG) {
                     Log.e(LOG_TAG, "Exception", exception);
                 }
-                return null;
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
             }
+            EventMonitor.event("LinkLoader", mStartTime);
         }
 
-        @Override
-        protected void onPostExecute(String result) {
+        private void parseHtml(String result) {
 
             mHtml = result;
-            parseHtml();
-        }
-
-        private void parseHtml() {
-
             if (mHtml == null) {
                 mLinkLoader.onLinkMetadataLoaded();
             } else {
@@ -184,34 +180,37 @@ public class LinkLoader<T> implements Loader<T> {
         }
     }
 
-    private static class DownloadImageTask<T> extends AsyncTask<String, Void, Bitmap> {
+    private static class DownloadImageBackgroundAction<T> extends BackgroundAction {
 
         private final LinkLoader<T> mLinkLoader;
+        private final String mUrl;
 
-        public DownloadImageTask(LinkLoader<T> linkLoader) {
+        public DownloadImageBackgroundAction(@NonNull TwinmeContext twinmeContext, LinkLoader<T> linkLoader, @NonNull String url) {
+            super(twinmeContext, TIMEOUT);
             mLinkLoader = linkLoader;
+            mUrl = url;
         }
 
-        protected Bitmap doInBackground(String... urls) {
+        @Override
+        protected void execute() {
             Bitmap bitmap = null;
-            try (InputStream in = new URL(urls[0]).openStream()) {
+            try (InputStream in = new URL(mUrl).openStream()) {
                 bitmap = BitmapFactory.decodeStream(in);
             } catch (Throwable exception) {
                 Log.e(LOG_TAG, "Exception", exception);
             }
-            return bitmap;
-        }
-
-        protected void onPostExecute(Bitmap bitmap) {
 
             if (bitmap != null) {
                 mLinkLoader.setImage(bitmap);
             } else {
                 mLinkLoader.onLinkMetadataLoaded();
             }
+            EventMonitor.event("ImageLoader", mStartTime);
         }
     }
 
+    @NonNull
+    private final TwinmeContext mTwinmeContext;
     @NonNull
     private final T mItem;
     @Nullable
@@ -231,11 +230,12 @@ public class LinkLoader<T> implements Loader<T> {
      * @param item             the item to redraw when the link is loaded.
      * @param objectDescriptor the image descriptor to load.
      */
-    public LinkLoader(@NonNull T item, @NonNull ConversationService.ObjectDescriptor objectDescriptor) {
+    public LinkLoader(@NonNull TwinmeContext twinmeContext, @NonNull T item, @NonNull ConversationService.ObjectDescriptor objectDescriptor) {
         if (DEBUG) {
             Log.d(LOG_TAG, "LinkLoader objectDescriptor=" + objectDescriptor);
         }
 
+        mTwinmeContext = twinmeContext;
         mItem = item;
         mObjectDescriptor = objectDescriptor;
         mIsFinished = false;
@@ -285,8 +285,8 @@ public class LinkLoader<T> implements Loader<T> {
 
         imageUrl = imageUrl.replaceFirst("^http:", "https:");
 
-        DownloadImageTask<T> downloadImageTask = new DownloadImageTask<>(this);
-        downloadImageTask.execute(imageUrl);
+        DownloadImageBackgroundAction<T> downloadImageTask = new DownloadImageBackgroundAction<>(mTwinmeContext, this, imageUrl);
+        downloadImageTask.start();
     }
 
     public void setImage(Bitmap bitmap) {
@@ -391,8 +391,8 @@ public class LinkLoader<T> implements Loader<T> {
                     return null;
                 }
             }
-            LinkMetadataAsyncTask<T> linkLoaderAsyncTask = new LinkMetadataAsyncTask<>(this, url);
-            linkLoaderAsyncTask.execute();
+            LinkMetadataBackgroundAction<T> linkLoaderAction = new LinkMetadataBackgroundAction<>(mTwinmeContext, this, url);
+            linkLoaderAction.start();
         }
 
         return null;

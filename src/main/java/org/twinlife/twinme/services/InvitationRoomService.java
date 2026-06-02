@@ -1,14 +1,16 @@
 /*
- *  Copyright (c) 2021-2024 twinlife SA.
+ *  Copyright (c) 2021-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
  *   Fabrice Trescartes (Fabrice.Trescartes@twin.life)
+ *   Stephane Carrez (Stephane.Carrez@twin.life)
  */
 
 package org.twinlife.twinme.services;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -72,10 +74,13 @@ public class InvitationRoomService extends AbstractTwinmeService {
     @Nullable
     private Observer mObserver;
     private final UUID mRoomId;
+    @Nullable
     private Contact mRoom;
     private int mState = 0;
     private int mWork = 0;
     private final ConversationServiceObserver mConversationServiceObserver;
+    @Nullable
+    private final Uri mInvitationLink;
     private ConversationService mConversationService;
     private List<Contact> mContactsToInvite;
     private Contact mCurrentContact;
@@ -84,11 +89,13 @@ public class InvitationRoomService extends AbstractTwinmeService {
     private Conversation mConversation;
     @Nullable
     private TwincodeOutbound mTwincodeOutbound;
-
+    @Nullable
+    private TwincodeURI mTwincodeURI;
     @Nullable
     private String mFindName;
 
-    public InvitationRoomService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull Observer observer, @NonNull UUID roomId) {
+    public InvitationRoomService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull Observer observer,
+                                 @NonNull UUID roomId, @Nullable Uri invitationLink) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
             Log.d(LOG_TAG, "GroupService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
@@ -96,6 +103,7 @@ public class InvitationRoomService extends AbstractTwinmeService {
 
         mObserver = observer;
         mRoomId = roomId;
+        mInvitationLink = invitationLink;
         mTwinmeContextObserver = new TwinmeContextObserver();
         mConversationServiceObserver = new ConversationServiceObserver();
         mTwinmeContext.setObserver(mTwinmeContextObserver);
@@ -196,13 +204,12 @@ public class InvitationRoomService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "pushTwincode");
         }
 
-        if (mConversation == null || mRoom.getPublicPeerTwincodeOutboundId() == null) {
-
+        if (mConversation == null || mTwincodeURI == null || mTwincodeURI.twincodeId == null) {
             return;
         }
 
         long requestId = newOperation(PUSH_TWINCODE);
-        mTwinmeContext.pushTwincode(requestId, mConversation, null, null, mRoom.getPublicPeerTwincodeOutboundId(), Invitation.SCHEMA_ID, null, true, 0);
+        mTwinmeContext.pushTwincode(requestId, mConversation, null, null, mTwincodeURI.twincodeId, Invitation.SCHEMA_ID, mTwincodeURI.pubKey, true, 0);
     }
 
     private void onGetContacts(@NonNull List<Contact> contacts) {
@@ -241,10 +248,6 @@ public class InvitationRoomService extends AbstractTwinmeService {
             if (avatar == null && room.getAvatarId() != null) {
                 getImageFromServer(room);
             }
-            if (mRoom.getPublicPeerTwincodeOutboundId() != null) {
-                mWork |= GET_TWINCODE;
-                mState &= ~(GET_TWINCODE | GET_TWINCODE_DONE);
-            }
         } else if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
             runOnGetContactNotFound(mObserver);
         } else {
@@ -265,10 +268,6 @@ public class InvitationRoomService extends AbstractTwinmeService {
 
         mState |= GET_TWINCODE_DONE;
         mTwincodeOutbound = twincodeOutbound;
-        if (twincodeOutbound != null) {
-            mWork |= GET_INVITATION_LINK;
-            mState &= ~(GET_INVITATION_LINK | GET_INVITATION_LINK_DONE);
-        }
         onOperation();
     }
 
@@ -278,6 +277,7 @@ public class InvitationRoomService extends AbstractTwinmeService {
         }
 
         mState |= GET_INVITATION_LINK_DONE;
+        mTwincodeURI = uri;
         if (uri != null) {
             runOnUiThread(() -> {
                 if (mObserver != null) {
@@ -344,28 +344,42 @@ public class InvitationRoomService extends AbstractTwinmeService {
             return;
         }
 
-        if (mRoom != null && mRoom.getPublicPeerTwincodeOutboundId() != null) {
-            if ((mState & GET_TWINCODE) == 0) {
-                mState |= GET_TWINCODE;
+        if (mRoom != null) {
+            if (mInvitationLink != null) {
+                if ((mState & GET_INVITATION_LINK) == 0) {
+                    mState |= GET_INVITATION_LINK;
 
-                mTwinmeContext.getTwincodeOutboundService().getTwincode(mRoom.getPublicPeerTwincodeOutboundId(),
-                        TwincodeOutboundService.REFRESH_PERIOD, this::onGetTwincode);
-                return;
-            }
-            if ((mState & GET_TWINCODE_DONE) == 0) {
-                return;
-            }
-        }
+                    mTwinmeContext.getTwincodeOutboundService().parseURI(mInvitationLink, this::onCreateURI);
+                    return;
+                }
+                if ((mState & GET_INVITATION_LINK_DONE) == 0) {
+                    return;
+                }
+            } else {
+                if (mRoom.getPublicPeerTwincodeOutboundId() != null) {
+                    if ((mState & GET_TWINCODE) == 0) {
+                        mState |= GET_TWINCODE;
 
-        if (mTwincodeOutbound != null && (mWork & GET_INVITATION_LINK) != 0) {
-            if ((mState & GET_INVITATION_LINK) == 0) {
-                mState |= GET_INVITATION_LINK;
-                mTwinmeContext.getTwincodeOutboundService().createURI(TwincodeURI.Kind.Invitation, mTwincodeOutbound,
-                        this::onCreateURI);
-                return;
-            }
-            if ((mState & GET_INVITATION_LINK_DONE) == 0) {
-                return;
+                        mTwinmeContext.getTwincodeOutboundService().getTwincode(mRoom.getPublicPeerTwincodeOutboundId(),
+                                TwincodeOutboundService.REFRESH_PERIOD, this::onGetTwincode);
+                        return;
+                    }
+                    if ((mState & GET_TWINCODE_DONE) == 0) {
+                        return;
+                    }
+                }
+
+                if (mTwincodeOutbound != null) {
+                    if ((mState & GET_INVITATION_LINK) == 0) {
+                        mState |= GET_INVITATION_LINK;
+                        mTwinmeContext.getTwincodeOutboundService().createURI(TwincodeURI.Kind.Invitation, mTwincodeOutbound,
+                                this::onCreateURI);
+                        return;
+                    }
+                    if ((mState & GET_INVITATION_LINK_DONE) == 0) {
+                        return;
+                    }
+                }
             }
         }
 

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2015-2025 twinlife SA.
+ *  Copyright (c) 2015-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -38,6 +38,7 @@ import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.util.Log;
 import android.util.Patterns;
+import android.view.MenuItem;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -1172,6 +1173,14 @@ public class CommonUtils {
         int rotation = Settings.System.getInt(context.getContentResolver(), Settings.System.ACCELEROMETER_ROTATION, 1);
 
         return rotation == 0;
+    }
+
+    public static void setMenuItem(@NonNull MenuItem menuItem, boolean selected, float offAlpha, float onAlpha) {
+        final View view = menuItem.getActionView();
+        menuItem.setEnabled(selected);
+        if (view != null) {
+            view.setAlpha(selected ? onAlpha : offAlpha);
+        }
     }
 
     private static int getOffset(Range range, List<Range> ranges) {

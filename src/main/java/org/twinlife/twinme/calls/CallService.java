@@ -1000,7 +1000,7 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         if (userLocation == null) {
             return;
         }
-        connection.sendDescriptor(call.createGeolocation(userLocation.getLongitude(), userLocation.getLatitude(), userLocation.getAltitude(), mLocationManager.getMapLongitudeDelta(), mLocationManager.getMapLatitudeDelta()));
+        connection.sendDescriptor(call.createGeolocation(userLocation.getLongitude(), userLocation.getLatitude(), userLocation.getAltitude(), mLocationManager.getMapLongitudeDelta(), mLocationManager.getMapLatitudeDelta(), false));
     }
 
     public static boolean isLocationStartShared() {

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2025 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -28,6 +28,7 @@ import org.twinlife.twinlife.ConversationService.UpdateType;
 import org.twinlife.twinlife.Filter;
 import org.twinlife.twinlife.ImageId;
 import org.twinlife.twinlife.ImageService;
+import org.twinlife.twinlife.Permission;
 import org.twinlife.twinlife.RepositoryObject;
 import org.twinlife.twinlife.util.EventMonitor;
 import org.twinlife.twinlife.util.Utils;
@@ -62,8 +63,9 @@ public class GroupService extends AbstractTwinmeService {
     private static final int CREATE_GROUP_DONE = 1 << 7;
     private static final int LIST_GROUP_MEMBER = 1 << 8;
     private static final int LIST_GROUP_MEMBER_DONE = 1 << 9;
-    private static final int INVITE_GROUP_MEMBER = 1 << 10;
-    private static final int INVITE_GROUP_MEMBER_DONE = 1 << 11;
+    private static final int CHECK_PENDING_INVITATIONS = 1 << 10;
+    private static final int INVITE_GROUP_MEMBER = 1 << 11;
+    private static final int INVITE_GROUP_MEMBER_DONE = 1 << 12;
     private static final int UPDATE_GROUP = 1 << 13;
     private static final int UPDATE_GROUP_DONE = 1 << 14;
 
@@ -279,7 +281,7 @@ public class GroupService extends AbstractTwinmeService {
     private String mGroupDescription;
     @Nullable
     private Capabilities mGroupCapabilities;
-    private long mJoinPermissions;
+    private List<Permission> mJoinPermissions;
     private Group mGroup;
     private ImageId mAvatarId;
     private Bitmap mAvatar;
@@ -386,7 +388,8 @@ public class GroupService extends AbstractTwinmeService {
      * @param members     the list of members to invite.
      * @param permissions the default join permission for members.
      */
-    public void createGroup(String name, @Nullable String description, Bitmap avatar, File avatarFile, List<Contact> members, long permissions) {
+    public void createGroup(String name, @Nullable String description, Bitmap avatar, File avatarFile, List<Contact> members,
+                            @Nullable List<Permission> permissions) {
         if (DEBUG) {
             Log.d(LOG_TAG, "createGroup: name=" + name + " avatarFile=" + avatarFile);
         }
@@ -415,7 +418,7 @@ public class GroupService extends AbstractTwinmeService {
 
         mInviteMembers = members;
         mWork |= INVITE_GROUP_MEMBER;
-        mState &= ~(INVITE_GROUP_MEMBER | INVITE_GROUP_MEMBER_DONE);
+        mState &= ~(INVITE_GROUP_MEMBER | INVITE_GROUP_MEMBER_DONE | CHECK_PENDING_INVITATIONS);
         showProgressIndicator();
         startOperation();
     }
@@ -428,7 +431,8 @@ public class GroupService extends AbstractTwinmeService {
         updateGroup(groupName, groupDescription, null, null, null, null);
     }
 
-    public void updateGroup(@NonNull String groupName, @Nullable String groupDescription, @Nullable Bitmap groupAvatar, @Nullable File groupAvatarFile, @Nullable Long permissions, @Nullable Capabilities groupCapabilities) {
+    public void updateGroup(@NonNull String groupName, @Nullable String groupDescription, @Nullable Bitmap groupAvatar, @Nullable File groupAvatarFile,
+                            @Nullable List<Permission> permissions, @Nullable Capabilities groupCapabilities) {
         if (DEBUG) {
             Log.d(LOG_TAG, "updateGroup: groupName=" + groupName + " groupAvatarFile=" + groupAvatarFile);
         }
@@ -462,7 +466,7 @@ public class GroupService extends AbstractTwinmeService {
         startOperation();
     }
 
-    public void updateGroupPermissions(long permissions) {
+    public void updateGroupPermissions(@Nullable List<Permission> permissions) {
         if (DEBUG) {
             Log.d(LOG_TAG, "updateGroupPermissions: " + permissions);
         }
@@ -696,6 +700,18 @@ public class GroupService extends AbstractTwinmeService {
     private void nextInviteMember() {
         if (DEBUG) {
             Log.d(LOG_TAG, "nextInviteMember");
+        }
+
+        // First, look at existing invitation to make sure we don't send again an invitation to the same contact
+        if ((mState & CHECK_PENDING_INVITATIONS) == 0) {
+            mState |= CHECK_PENDING_INVITATIONS;
+
+            final Map<UUID, InvitationDescriptor> pendingInvitations = mTwinmeContext.getConversationService().listPendingInvitations(mGroup);
+            for (int i = mInviteMembers.size(); --i >= 0; ) {
+                if (pendingInvitations.containsKey(mInviteMembers.get(i).getId())) {
+                    mInviteMembers.remove(i);
+                }
+            }
         }
 
         if (mInviteMembers == null || mInviteMembers.isEmpty()) {

@@ -11,6 +11,7 @@
 package org.twinlife.twinme.ui;
 
 import android.content.ContentResolver;
+import android.content.Context;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,19 +22,6 @@ import org.twinlife.twinme.models.Space;
 
 @SuppressWarnings("unused")
 public interface TwinmeActivity {
-
-    enum Permission {
-        CAMERA,
-        RECORD_AUDIO,
-        READ_EXTERNAL_STORAGE,
-        WRITE_EXTERNAL_STORAGE,
-        BLUETOOTH_CONNECT,
-        ACCESS_FINE_LOCATION,
-        ACCESS_COARSE_LOCATION,
-        READ_MEDIA_AUDIO,
-        POST_NOTIFICATIONS,
-        ACCESS_BACKGROUND_LOCATION,
-    }
 
     interface MessageCallback {
 
@@ -76,7 +64,12 @@ public interface TwinmeActivity {
     @NonNull
     TwinmeContext getTwinmeContext();
 
+    // Implemented by Activity
     void runOnUiThread(Runnable runnable);
+
+    Context getApplicationContext();
+
+    ContentResolver getContentResolver();
 
     default void onExecutionError(ErrorCode errorCode){
         //NOOP, implemented in AbstractTwinmeActivity
@@ -86,7 +79,9 @@ public interface TwinmeActivity {
         //NOOP, override in activities when needed
     }
 
-    ContentResolver getContentResolver();
+    default void onExecutionSuccess(){
+        //NOOP, implemented in AbstractTwinmeActivity
+    }
 
     boolean checkPermissions(@NonNull Permission[] permissions);
 

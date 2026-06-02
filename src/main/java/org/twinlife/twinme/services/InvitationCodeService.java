@@ -15,6 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.CryptoService;
 import org.twinlife.twinlife.Filter;
 import org.twinlife.twinlife.ImageId;
 import org.twinlife.twinlife.ImageService;
@@ -67,7 +68,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
 
         void onCreateInvitationWithCode(@Nullable Invitation invitation);
 
-        void onGetInvitationCode(@Nullable TwincodeOutbound twincodeOutbound, @Nullable Bitmap avatar, @Nullable String publicKey);
+        void onGetInvitationCode(@Nullable TwincodeOutbound twincodeOutbound, @Nullable Bitmap avatar, @Nullable CryptoService.PublicKeyData publicKey);
 
         void onGetInvitationCodeNotFound();
 
@@ -100,7 +101,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
         }
 
         @Override
-        public void onGetInvitationCode(long requestId, @NonNull TwincodeOutbound twincodeOutbound, @Nullable String publicKey) {
+        public void onGetInvitationCode(long requestId, @NonNull TwincodeOutbound twincodeOutbound, @Nullable CryptoService.PublicKeyData publicKey) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "onGetInvitationCode: requestId=" + requestId + " twincodeOutbound=" + twincodeOutbound);
             }
@@ -159,7 +160,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
     @Nullable
     private TwincodeOutbound mTwincodeOutbound;
     @Nullable
-    private String mPublicKey;
+    private CryptoService.PublicKeyData mPublicKey;
     @Nullable
     private ImageId mTwincodeAvatarId;
 
@@ -550,7 +551,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
         onOperation();
     }
 
-    private void onGetInvitationCode(@NonNull TwincodeOutbound twincodeOutbound, @Nullable String publicKey) {
+    private void onGetInvitationCode(@NonNull TwincodeOutbound twincodeOutbound, @Nullable CryptoService.PublicKeyData publicKey) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onGetInvitationCode: twincodeOutbound=" + twincodeOutbound + " publicKey=" + publicKey);
         }
