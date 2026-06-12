@@ -77,7 +77,7 @@ public class BackupService extends Service {
     public static final String ACTION_CANCEL_RESTORE = "org.twinlife.device.android.twinme.CANCEL_RESTORE";
     public static final String ACTION_GENERATE_WORDS = "org.twinlife.device.android.twinme.GENERATE_BACKUP_WORDS";
     public static final String ACTION_VERIFY_BACKUP = "org.twinlife.device.android.twinme.VERIFY_BACKUP";
-    public static final String ACTION_CHECK_FILE_SIGNATURE = "org.twinlife.device.android.twinme.CHECK_FILE_SIGNATURE";
+    public static final String ACTION_CHECK_FILE_COMPATIBILITY = "org.twinlife.device.android.twinme.CHECK_FILE_COMPATIBILITY";
     /**
      * Type: byte array.
      */
@@ -100,7 +100,7 @@ public class BackupService extends Service {
     public static final String MESSAGE_RESTORE_ERROR = "restoreError";
     public static final String MESSAGE_WORDS_GENERATED = "wordsGenerated";
     public static final String MESSAGE_VERIFY_REPORT = "verifyReport";
-    public static final String MESSAGE_CHECK_FILE_SIGNATURE_RESULT = "checkFileSignatureResult";
+    public static final String MESSAGE_CHECK_FILE_COMPATIBILITY_RESULT = "checkFileSignatureResult";
 
     public static final String BACKUP_SERVICE_EVENT = "event";
     public static final String BACKUP_SERVICE_BACKUP_ID = "backupId";
@@ -117,7 +117,7 @@ public class BackupService extends Service {
     public static final String BACKUP_SERVICE_PASSWORD_WORDS = "passwordWords";
     public static final String BACKUP_SERVICE_STATS = "stats";
     public static final String BACKUP_SERVICE_RESTORE_REPORT = "restoreReport";
-    public static final String BACKUP_SERVICE_CHECK_FILE_SIGNATURE_RESULT = "checkFileSignatureResult";
+    public static final String BACKUP_SERVICE_CHECK_FILE_COMPATIBILITY_RESULT = "checkFileCompatibilityResult";
     public static final String BACKUP_SERVICE_SYNC_ERRORS = "syncErrors";
 
     public static class RestoreReport implements Serializable {
@@ -329,6 +329,16 @@ public class BackupService extends Service {
 
             if (mTwinmeContext != null) {
                 mTwinmeContext.setObserver(mTwinmeContextObserver);
+
+                // If we are ready, don't wait for the Twinlife executor to call onTwinlifeReady() because we can receive an intent.
+                if (mTwinmeContext.hasTwinlife()) {
+                    onTwinlifeReady();
+                }
+
+                // If we are not connected, force an immediate connection retry.
+                if (!mTwinmeContext.isConnected()) {
+                    mTwinmeContext.connect();
+                }
             }
         }
     }
@@ -371,8 +381,8 @@ public class BackupService extends Service {
             case ACTION_VERIFY_BACKUP:
                 onActionVerifyBackup(intent);
                 break;
-            case ACTION_CHECK_FILE_SIGNATURE:
-                onActionCheckFileSignature(intent);
+            case ACTION_CHECK_FILE_COMPATIBILITY:
+                onActionCheckFileCompatibility(intent);
                 break;
             default:
                 Log.w(LOG_TAG, "Ignoring intent with unknown action " + action);
@@ -638,20 +648,20 @@ public class BackupService extends Service {
         });
     }
 
-    public void onActionCheckFileSignature(@NonNull Intent intent) {
+    public void onActionCheckFileCompatibility(@NonNull Intent intent) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onActionCheckFileSignature: intent=" + intent);
         }
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            sendCheckFileSignatureResult(false);
+            sendCheckFileCompatibilityResult(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR);
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            sendCheckFileSignatureResult(false);
+            sendCheckFileCompatibilityResult(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR);
             return;
         }
 
@@ -659,13 +669,13 @@ public class BackupService extends Service {
 
         if (filePath == null) {
             Log.e(LOG_TAG, "Missing param PARAM_FILE_PATH");
-            sendCheckFileSignatureResult(false);
+            sendCheckFileCompatibilityResult(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR);
             return;
         }
 
         mTwinmeContext.execute(() -> {
-            boolean result = mBackupService.checkFileSignature(filePath);
-            sendCheckFileSignatureResult(result);
+            org.twinlife.twinlife.BackupService.ErrorCode result = mBackupService.checkFileCompatibility(filePath);
+            sendCheckFileCompatibilityResult(result);
         });
     }
 
@@ -872,15 +882,15 @@ public class BackupService extends Service {
         sendBroadcast(intent);
     }
 
-    private void sendCheckFileSignatureResult(boolean result) {
+    private void sendCheckFileCompatibilityResult(org.twinlife.twinlife.BackupService.ErrorCode result) {
         if (DEBUG) {
             Log.d(LOG_TAG, "sendCheckFileSignatureResult: result=" + result);
         }
 
         Intent intent = new Intent(Intents.INTENT_BACKUP_SERVICE_MESSAGE);
         intent.setPackage(getPackageName());
-        intent.putExtra(BACKUP_SERVICE_EVENT, MESSAGE_CHECK_FILE_SIGNATURE_RESULT);
-        intent.putExtra(BACKUP_SERVICE_CHECK_FILE_SIGNATURE_RESULT, result);
+        intent.putExtra(BACKUP_SERVICE_EVENT, MESSAGE_CHECK_FILE_COMPATIBILITY_RESULT);
+        intent.putExtra(BACKUP_SERVICE_CHECK_FILE_COMPATIBILITY_RESULT, result);
 
         sendBroadcast(intent);
     }

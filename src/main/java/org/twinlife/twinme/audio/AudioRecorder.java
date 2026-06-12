@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.OptIn;
 import androidx.annotation.UiThread;
+import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.util.UnstableApi;
@@ -38,6 +39,7 @@ import org.twinlife.twinlife.util.Utils;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -54,7 +56,8 @@ public class AudioRecorder {
         TRANSFORMER_ERROR,
         EMPTY_FILE,
         NO_STORAGE_SPACE,
-        IO_ERROR;
+        IO_ERROR,
+        MEDIA_PLAYER_ERROR;
 
         private static final Map<BaseService.ErrorCode, ErrorCode> ERROR_CODES_MAPPING = Map.of(
                 BaseService.ErrorCode.NO_STORAGE_SPACE, ErrorCode.NO_STORAGE_SPACE,
@@ -96,7 +99,6 @@ public class AudioRecorder {
             }
 
             mMainThreadHandler.post(() -> mListener.onRecordingReady(mOutput));
-            cleanSegments();
         }
 
         @Override
@@ -105,7 +107,9 @@ public class AudioRecorder {
                 Log.d(LOG_TAG, "onError: composition=" + composition + " exportResult=" + exportResult + " exportException=" + exportException);
             }
 
-            handleError(ErrorCode.TRANSFORMER_ERROR, exportException);
+            if (!mExecutor.isShutdown()) {
+                mExecutor.execute(() -> handleError(ErrorCode.TRANSFORMER_ERROR, exportException));
+            }
             release();
         }
 
@@ -145,18 +149,28 @@ public class AudioRecorder {
             @Override
             public void onPlayerError(@NonNull androidx.media3.common.PlaybackException error) {
                 Log.e(LOG_TAG, "ExoPlayer error during playback", error);
-                // TODO REC: notify listener of playback error?
+                mExecutor.execute(() -> handleError(ErrorCode.MEDIA_PLAYER_ERROR, error));
                 stopPlayback();
             }
         };
 
         @UiThread
-        private synchronized void startPlayback() {
+        private void startPlayback() {
             if (DEBUG) {
                 Log.d(LOG_TAG, "startPlayback");
             }
 
-            if (mIsRecording) {
+            boolean isRecording;
+            boolean isPlaying;
+            List<File> segments;
+
+            synchronized (AudioRecorder.this) {
+                isRecording = mIsRecording;
+                isPlaying = exoPlayer.isPlaying();
+                segments = getAudioSegments();
+            }
+
+            if (isRecording) {
                 if (DEBUG) {
                     Log.d(LOG_TAG, "Cannot start playback while recording is active.");
                 }
@@ -164,7 +178,7 @@ public class AudioRecorder {
                 return;
             }
 
-            if (mAudioSegments.isEmpty()) {
+            if (segments.isEmpty()) {
                 if (DEBUG) {
                     Log.d(LOG_TAG, "No audio segments to play.");
                 }
@@ -172,7 +186,7 @@ public class AudioRecorder {
                 return;
             }
 
-            if (exoPlayer.isPlaying()) {
+            if (isPlaying) {
                 if (DEBUG) {
                     Log.d(LOG_TAG, "Playback is already in progress.");
                 }
@@ -180,7 +194,7 @@ public class AudioRecorder {
             }
 
             List<MediaItem> mediaItems = new ArrayList<>();
-            for (File segmentFile : mAudioSegments) {
+            for (File segmentFile : segments) {
                 if (segmentFile.exists()) {
                     mediaItems.add(MediaItem.fromUri(Uri.fromFile(segmentFile)));
                 }
@@ -215,21 +229,25 @@ public class AudioRecorder {
         }
 
         @UiThread
-        private synchronized void pausePlayback() {
+        private void pausePlayback() {
             if (DEBUG) {
                 Log.d(LOG_TAG, "pausePlayback");
             }
 
-            exoPlayer.setPlayWhenReady(!exoPlayer.isPlaying());
+            synchronized (AudioRecorder.this) {
+                exoPlayer.setPlayWhenReady(!exoPlayer.isPlaying());
+            }
         }
 
         @UiThread
-        private synchronized void stopPlayback() {
+        private void stopPlayback() {
             if (DEBUG) {
                 Log.d(LOG_TAG, "internalStopPlayback");
             }
 
-            exoPlayer.stop();
+            synchronized (AudioRecorder.this) {
+                exoPlayer.stop();
+            }
             mListener.onPlaybackStopped();
         }
 
@@ -238,7 +256,6 @@ public class AudioRecorder {
             mMainThreadHandler.post(exoPlayer::release);
         }
     }
-
 
     @NonNull
     private final Context mContext;
@@ -386,16 +403,15 @@ public class AudioRecorder {
                 }
             }
 
-            internalRelease();
-            mExecutor.shutdown();
-
             handleError(ErrorCode.MEDIA_RECORDER_ERROR, exception);
+
+            release();
 
             return;
         }
 
         mSegmentId++;
-        mAudioSegments.add(audioSegment);
+        addAudioSegment(audioSegment);
         mIsRecording = true;
         mMainThreadHandler.postDelayed(this::updateTimer, TIMER_REFRESH_RATE);
 
@@ -426,11 +442,11 @@ public class AudioRecorder {
 
         try {
             mRecorder.stop();
-            internalRelease();
         } catch (Exception exception) {
             handleError(ErrorCode.MEDIA_RECORDER_ERROR, exception);
             return false;
         } finally {
+            internalRelease();
             mIsRecording = false;
         }
 
@@ -445,18 +461,21 @@ public class AudioRecorder {
 
         if (mIsRecording) {
             if (!internalStop()) {
+                mMainThreadHandler.post(() -> mListener.onRecordingReady(null));
                 return;
             }
         }
 
-        if (mAudioSegments.isEmpty()) {
+        List<File> audioSegments = getAudioSegments();
+
+        if (audioSegments.isEmpty()) {
             handleError(ErrorCode.EMPTY_FILE, new Exception("No audio segments"));
             mMainThreadHandler.post(() -> mListener.onRecordingReady(null));
             return;
         }
 
-        if (mAudioSegments.size() == 1) {
-            File segment = mAudioSegments.get(0);
+        if (audioSegments.size() == 1) {
+            File segment = audioSegments.get(0);
 
             if (!segment.exists() || segment.length() == 0) {
                 handleError(ErrorCode.EMPTY_FILE, new Exception("Lone segment is empty"));
@@ -474,7 +493,7 @@ public class AudioRecorder {
                         return;
                     }
                 }
-                mAudioSegments.clear();
+                cleanSegments();
             } catch (Exception e) {
                 handleError(ErrorCode.IO_ERROR, e);
                 mMainThreadHandler.post(() -> mListener.onRecordingReady(null));
@@ -491,14 +510,15 @@ public class AudioRecorder {
 
     @OptIn(markerClass = UnstableApi.class)
     private synchronized void concatenateSegments() {
+        List<File> segments = getAudioSegments();
         if (DEBUG) {
-            Log.d(LOG_TAG, "concatenateSegments, " + mAudioSegments.size() + " segments");
+            Log.d(LOG_TAG, "concatenateSegments, " + segments.size() + " segments");
         }
 
-        EditedMediaItemSequence.Builder builder = new EditedMediaItemSequence.Builder();
+        EditedMediaItemSequence.Builder builder = new EditedMediaItemSequence.Builder(Collections.singleton(C.TRACK_TYPE_AUDIO));
 
-        for (File segment : mAudioSegments) {
-            builder.addItem(new EditedMediaItem.Builder(MediaItem.fromUri(segment.getPath())).build());
+        for (File segment : segments) {
+            builder.addItem(new EditedMediaItem.Builder(MediaItem.fromUri(Uri.fromFile(segment))).build());
         }
 
         EditedMediaItemSequence sequence = builder.build();
@@ -582,7 +602,11 @@ public class AudioRecorder {
 
         String segmentInfo = buildSegmentInfo();
 
-        mMainThreadHandler.post(() -> mListener.onRecordingError(errorCode, segmentInfo, exception));
+        Exception wrapped = exception != null ?
+                new Exception(segmentInfo, exception) :
+                new Exception(segmentInfo);
+
+        mMainThreadHandler.post(() -> mListener.onRecordingError(errorCode, segmentInfo, wrapped));
     }
 
     @NonNull
@@ -591,15 +615,17 @@ public class AudioRecorder {
             Log.d(LOG_TAG, "buildSegmentInfo");
         }
 
-        if (mAudioSegments.isEmpty()) {
+        List<File> segments = getAudioSegments();
+
+        if (segments.isEmpty()) {
             return "Segment info: no segment";
         }
 
         try {
             StringBuilder messageBuilder = new StringBuilder("Segments info: [");
 
-            for (int i = 0; i < mAudioSegments.size(); i++) {
-                File segment = mAudioSegments.get(i);
+            for (int i = 0; i < segments.size(); i++) {
+                File segment = segments.get(i);
                 messageBuilder.append(i).append(": exists=").append(segment.exists())
                         .append(" length=").append(segment.length())
                         .append(", ");
@@ -613,18 +639,44 @@ public class AudioRecorder {
 
     }
 
-    private synchronized void cleanSegments() {
+    private void addAudioSegment(@NonNull File audioSegment) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "addAudioSegment: audioSegment=" + audioSegment);
+        }
+
+        synchronized (mAudioSegments) {
+            mAudioSegments.add(audioSegment);
+        }
+    }
+
+    private List<File> getAudioSegments() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "getAudioSegments");
+        }
+
+        synchronized (mAudioSegments) {
+            return new ArrayList<>(mAudioSegments);
+        }
+    }
+
+    private void cleanSegments() {
         if (DEBUG) {
             Log.d(LOG_TAG, "cleanSegments");
         }
 
-        for (File segment : mAudioSegments) {
-            if (!segment.delete()) {
+        List<File> toDelete;
+
+        synchronized (mAudioSegments) {
+            toDelete = new ArrayList<>(mAudioSegments);
+            mAudioSegments.clear();
+        }
+
+        for (File segment : toDelete) {
+            if (segment.exists() && !segment.delete()) {
                 if (DEBUG) {
                     Log.d(LOG_TAG, "Failed to delete segment: " + segment.getPath());
                 }
             }
         }
-        mAudioSegments.clear();
     }
 }

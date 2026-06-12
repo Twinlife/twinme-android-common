@@ -45,6 +45,7 @@ import org.twinlife.twinme.ui.TwinmeApplication;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URLConnection;
 import java.util.Arrays;
 
@@ -445,57 +446,61 @@ public class FileInfo implements Parcelable  {
     @UnstableApi
     public void reduceVideo(@NonNull Context context, @NonNull ReduceVideoObserver saveVideoObserver) {
 
-        Handler handler = new Handler(Looper.getMainLooper());
+        // Execute as much as we can on the twinlife thread to avoid blocking the main UI thread.
+        final Handler handler = new Handler(Looper.getMainLooper());
+        final File file;
+        try {
+            file = File.createTempFile("media", ".mp4", context.getCacheDir());
+
+        } catch (IOException ignored) {
+            handler.post(() -> saveVideoObserver.onReduceVideoFinish(null));
+            return;
+        }
+
+        Transformer.Listener transformerListener = new Transformer.Listener() {
+            @Override
+            public void onCompleted(@Nullable Composition composition, @Nullable ExportResult exportResult) {
+                saveVideoObserver.onReduceVideoFinish(file);
+            }
+
+            @Override
+            public void onError(@Nullable Composition composition, @Nullable ExportResult exportResult, @Nullable ExportException exportException) {
+                saveVideoObserver.onReduceVideoFinish(null);
+            }
+        };
+
+        Transformer transformer = new Transformer.Builder(context)
+                .setVideoMimeType(MimeTypes.VIDEO_H264)
+                .setAudioMimeType(MimeTypes.AUDIO_AAC)
+                .addListener(transformerListener)
+                .build();
+
+        int videoHeight;
+        if (mVideoHeight == 0) {
+            videoHeight = STANDARD_VIDEO_RESOLUTION;
+        } else {
+            videoHeight = (int) (mVideoHeight * 0.5);
+        }
+
+        Effects effects = new Effects(
+                com.google.common.collect.ImmutableList.of(),
+                com.google.common.collect.ImmutableList.of(androidx.media3.effect.Presentation.createForHeight(videoHeight))
+        );
+
+        EditedMediaItem mediaItem = new EditedMediaItem.Builder(MediaItem.fromUri(mUri))
+                .setEffects(effects)
+                .build();
+
+        // Start the transformation from the main UI thread, handle any exception including
+        // runtime exceptions and errors.
         handler.post(() -> {
-
-            String outputPath = null;
             try {
-                File file = File.createTempFile("media", ".mp4", context.getCacheDir());
-                outputPath = file.getPath();
-                Transformer.Listener transformerListener = new Transformer.Listener() {
-                    @Override
-                    public void onCompleted(@Nullable Composition composition, @Nullable ExportResult exportResult) {
+                transformer.start(mediaItem, file.getPath());
 
-                        saveVideoObserver.onReduceVideoFinish(file);
-                    }
-
-                    @Override
-                    public void onError(@Nullable Composition composition, @Nullable ExportResult exportResult, @Nullable ExportException exportException) {
-
-                        saveVideoObserver.onReduceVideoFinish(null);
-                    }
-                };
-
-                Transformer transformer = new Transformer.Builder(context)
-                        .setVideoMimeType(MimeTypes.VIDEO_H264)
-                        .setAudioMimeType(MimeTypes.AUDIO_AAC)
-                        .addListener(transformerListener)
-                        .build();
-
-                int videoHeight;
-                if (mVideoHeight == 0) {
-                    videoHeight = STANDARD_VIDEO_RESOLUTION;
-                } else {
-                    videoHeight = (int) (mVideoHeight * 0.5);
-                }
-
-                Effects effects = new Effects(
-                        com.google.common.collect.ImmutableList.of(),
-                        com.google.common.collect.ImmutableList.of(androidx.media3.effect.Presentation.createForHeight(videoHeight))
-                );
-
-                EditedMediaItem mediaItem = new EditedMediaItem.Builder(MediaItem.fromUri(mUri))
-                        .setEffects(effects)
-                        .build();
-                transformer.start(mediaItem, outputPath);
-
-            } catch (Exception exception) {
+            } catch (Throwable exception) {
                 Log.e(LOG_TAG, "exception = ", exception);
-                if (outputPath != null) {
-                    File file = new File(outputPath);
-                    if (!file.delete()) {
-                        Log.w(LOG_TAG, "Cannot remove file");
-                    }
+                if (!file.delete()) {
+                    Log.w(LOG_TAG, "Cannot remove file");
                 }
 
                 saveVideoObserver.onReduceVideoFinish(null);

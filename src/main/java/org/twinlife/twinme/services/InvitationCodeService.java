@@ -694,7 +694,8 @@ public class InvitationCodeService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
         }
 
-        if ((errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) && operationId == GET_INVITATION_CODE) {
+        if ((errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED)
+                && (operationId == GET_INVITATION_CODE || operationId == CREATE_CONTACT)) {
             runOnUiThread(() -> {
                 if (mObserver != null) {
                     mObserver.onGetInvitationCodeNotFound();
