@@ -12,6 +12,7 @@ package org.twinlife.twinme.services;
 
 import android.annotation.SuppressLint;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
 
@@ -23,7 +24,7 @@ import androidx.annotation.UiThread;
 import androidx.annotation.WorkerThread;
 
 import org.twinlife.twinlife.AssertPoint;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.BuildConfig;
 import org.twinlife.twinlife.ConnectionStatus;
 import org.twinlife.twinlife.Consumer;
@@ -83,6 +84,9 @@ public class AbstractTwinmeService {
 
         // Optional methods
         default void onDeleteContact(@NonNull UUID contactId) {}
+
+        default void onGetShareContactNotFound(@NonNull UUID contactId) {
+        }
     }
 
     public interface GroupObserver {
@@ -633,6 +637,24 @@ public class AbstractTwinmeService {
                 }));
     }
 
+    public void getContactShareAvatar(@NonNull ConversationService.ContactShareDescriptor contactShareDescriptor, @NonNull TwinmeContext.Consumer<Bitmap> uiConsumer) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "getContactShareAvatar: contactShareDescriptor=" + contactShareDescriptor + " uiConsumer=" + uiConsumer);
+        }
+
+        mTwinmeContext.executeImage(() -> {
+            byte[] avatarBytes = contactShareDescriptor.loadAvatarData(mTwinmeContext.getFilesDir());
+
+            if (avatarBytes == null) {
+                uiConsumer.accept(null);
+            } else {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(avatarBytes, 0, avatarBytes.length);
+
+                runOnUiThread(() -> uiConsumer.accept(bitmap));
+            }
+        });
+    }
+
     public void parseURI(@NonNull Uri uri, @NonNull Consumer<TwincodeURI> complete) {
         if (DEBUG) {
             Log.d(LOG_TAG, "parseURI uri=" + uri);
@@ -743,6 +765,16 @@ public class AbstractTwinmeService {
 
         if (observer != null) {
             runOnUiThread(observer::onGetContactNotFound);
+        }
+    }
+
+    protected void runOnGetShareContactNotFound(@NonNull UUID contactId, @Nullable ContactObserver observer) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "runOnGetShareContactNotFound");
+        }
+
+        if (observer != null) {
+            runOnUiThread(() -> observer.onGetShareContactNotFound(contactId));
         }
     }
 

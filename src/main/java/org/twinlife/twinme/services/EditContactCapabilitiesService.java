@@ -14,10 +14,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Capabilities;
 import org.twinlife.twinme.models.Contact;
+import org.twinlife.twinme.models.Group;
 import org.twinlife.twinme.ui.TwinmeActivity;
 
 import java.util.UUID;
@@ -31,7 +32,10 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
     private static final int UPDATE_CONTACT = 1 << 2;
     private static final int UPDATE_CONTACT_DONE = 1 << 3;
 
-    public interface Observer extends AbstractTwinmeService.Observer, AbstractTwinmeService.ContactObserver {
+    private static final int GET_GROUP = 1 << 4;
+    private static final int GET_GROUP_DONE = 1 << 5;
+
+    public interface Observer extends AbstractTwinmeService.Observer, AbstractTwinmeService.ContactObserver, AbstractTwinmeService.GroupObserver {
     }
 
     private class TwinmeContextObserver extends AbstractTwinmeService.TwinmeContextObserver {
@@ -71,6 +75,7 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
     private int mState = 0;
     private int mWork = 0;
     private UUID mContactId;
+    private UUID mGroupId;
     private Contact mContact;
     private Capabilities mCapabilities;
     private Capabilities mPrivateCapabilities;
@@ -106,6 +111,18 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
         mWork |= GET_CONTACT;
         mState &= ~(GET_CONTACT | GET_CONTACT_DONE);
         mContactId = contactId;
+        showProgressIndicator();
+        startOperation();
+    }
+
+    public void getGroup(@NonNull UUID groupId) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "getGroup: groupId=" + groupId);
+        }
+
+        mWork |= GET_GROUP;
+        mState &= ~(GET_GROUP | GET_GROUP_DONE);
+        mGroupId = groupId;
         showProgressIndicator();
         startOperation();
     }
@@ -167,6 +184,19 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
             }
         }
 
+        // We must get the contact.
+        if ((mWork & GET_GROUP) != 0) {
+            if ((mState & GET_GROUP) == 0) {
+                mState |= GET_GROUP;
+
+                mTwinmeContext.getGroup(mGroupId, this::onGetGroup);
+                return;
+            }
+            if ((mState & GET_GROUP_DONE) == 0) {
+                return;
+            }
+        }
+
         //
         // Last Step
         //
@@ -198,6 +228,22 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
             runOnGetContactNotFound(mObserver);
         } else {
             onError(GET_CONTACT, errorCode, null);
+        }
+        onOperation();
+    }
+
+    private void onGetGroup(@NonNull ErrorCode errorCode, @Nullable Group group) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onGetGroup: group=" + group);
+        }
+
+        mState |= GET_GROUP_DONE;
+        if (group != null) {
+            runOnGetGroup(mObserver, group, null);
+        } else if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
+            runOnGetGroupNotFound(mObserver);
+        } else {
+            onError(GET_GROUP, errorCode, null);
         }
         onOperation();
     }

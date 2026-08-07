@@ -18,7 +18,7 @@ import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.ResourceDecoder;
 import com.bumptech.glide.load.data.DataFetcher;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ImageId;
 import org.twinlife.twinlife.ImageService;
 

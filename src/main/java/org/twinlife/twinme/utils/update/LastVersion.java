@@ -8,8 +8,6 @@
 
 package org.twinlife.twinme.utils.update;
 
-import android.content.Context;
-
 import androidx.annotation.NonNull;
 
 import java.io.File;

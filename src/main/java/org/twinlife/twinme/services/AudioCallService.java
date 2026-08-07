@@ -15,8 +15,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ImageId;
 import org.twinlife.twinlife.ImageService;
 import org.twinlife.twinme.TwinmeContext;
@@ -253,13 +252,13 @@ public class AudioCallService extends AbstractTwinmeService {
         onOperation();
     }
 
-    protected void onError(int operationId, BaseService.ErrorCode errorCode, @Nullable String errorParameter) {
+    protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
         }
 
         // Wait for reconnection
-        if (errorCode == BaseService.ErrorCode.TWINLIFE_OFFLINE) {
+        if (errorCode == ErrorCode.TWINLIFE_OFFLINE) {
             mRestarted = true;
 
             return;

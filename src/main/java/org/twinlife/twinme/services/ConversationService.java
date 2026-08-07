@@ -20,7 +20,7 @@ import androidx.annotation.Nullable;
 
 import org.twinlife.twinlife.AssertPoint;
 import org.twinlife.twinlife.BaseService;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService.ClearMode;
 import org.twinlife.twinlife.ConversationService.Conversation;
 import org.twinlife.twinlife.ConversationService.Descriptor;
@@ -82,6 +82,7 @@ public class ConversationService extends AbstractTwinmeService {
     private static final int PUSH_FILE = 1 << 25;
     private static final int UPDATE_DESCRIPTOR = 1 << 26;
     private static final int PUSH_POLL = 1 << 27;
+
 
     public interface Observer extends AbstractTwinmeService.Observer, ContactObserver {
 

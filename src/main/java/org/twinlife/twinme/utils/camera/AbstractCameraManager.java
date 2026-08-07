@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021-2024 twinlife SA.
+ *  Copyright (c) 2021-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -317,7 +317,14 @@ public abstract class AbstractCameraManager implements CameraManager {
             Log.d(LOG_TAG, "updateTextureSize");
         }
 
-        if (isOpened()) {
+        // Unlike other calls, if the camera is starting we must call setSizes() to recompute
+        // the texture size and transformation.
+        final boolean canUpdate;
+        synchronized (this) {
+            canUpdate = mState == State.STARTING || mState == State.READY || mState == State.WAITING_PICTURE;
+        }
+
+        if (canUpdate) {
             mCameraHandler.post(this::setSizes);
         }
     }

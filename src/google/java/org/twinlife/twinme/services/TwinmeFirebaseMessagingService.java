@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2025 twinlife SA.
+ *  Copyright (c) 2016-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -11,18 +11,15 @@
 package org.twinlife.twinme.services;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
-import org.twinlife.twinlife.ImageService;
 import org.twinlife.twinlife.JobService;
 import org.twinlife.twinlife.ManagementService;
 import org.twinlife.twinlife.util.EventMonitor;
@@ -30,7 +27,6 @@ import org.twinlife.twinme.TwinmeApplication;
 import org.twinlife.twinme.TwinmeApplicationImpl;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.NotificationContent;
-import org.twinlife.twinme.models.Originator;
 
 import java.util.HashMap;
 
@@ -44,7 +40,6 @@ public class TwinmeFirebaseMessagingService extends FirebaseMessagingService {
         if (DEBUG) {
             Log.d(LOG_TAG, "onMessageReceived: message=" + message);
         }
-
         Context context = getApplicationContext();
         TwinmeApplicationImpl twinmeApplication = TwinmeApplicationImpl.getInstance(context);
         if (twinmeApplication == null) {
@@ -108,13 +103,5 @@ public class TwinmeFirebaseMessagingService extends FirebaseMessagingService {
 
         Handler mHandler = new Handler(Looper.getMainLooper());
         mHandler.postDelayed(() -> onNewToken(token), RETRY_PERIOD);
-    }
-
-    @Nullable
-    private Bitmap getAvatar(@NonNull TwinmeContext twinmeContext, @NonNull Originator originator) {
-        if (originator.getAvatarId() == null) {
-            return null;
-        }
-        return twinmeContext.getImageService().getImage(originator.getAvatarId(), ImageService.Kind.THUMBNAIL);
     }
 }

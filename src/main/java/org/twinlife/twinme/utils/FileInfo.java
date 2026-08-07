@@ -37,7 +37,7 @@ import androidx.media3.transformer.ExportException;
 import androidx.media3.transformer.ExportResult;
 import androidx.media3.transformer.Transformer;
 
-import org.twinlife.twinlife.BaseService;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.util.Logger;
 import org.twinlife.twinlife.util.Utils;
 import org.twinlife.twinme.ui.TwinmeApplication;
@@ -373,8 +373,8 @@ public class FileInfo implements Parcelable  {
             }
 
             file = File.createTempFile("media", getExtension(), context.getCacheDir());
-            BaseService.ErrorCode errorCode = CommonUtils.copyUriToFile(context.getContentResolver(), getUri(), file);
-            if (errorCode == BaseService.ErrorCode.SUCCESS) {
+            ErrorCode errorCode = CommonUtils.copyUriToFile(context.getContentResolver(), getUri(), file);
+            if (errorCode == ErrorCode.SUCCESS) {
                 return new FileInfo(this, file);
             }
 
@@ -428,9 +428,9 @@ public class FileInfo implements Parcelable  {
         File file = null;
         try {
             file = File.createTempFile("file", extension, context.getCacheDir());
-            BaseService.ErrorCode errorCode = CommonUtils.copyUriToFile(context.getContentResolver(), getUri(), file);
+            ErrorCode errorCode = CommonUtils.copyUriToFile(context.getContentResolver(), getUri(), file);
 
-            if (errorCode == BaseService.ErrorCode.SUCCESS) {
+            if (errorCode == ErrorCode.SUCCESS) {
                 return new FileInfo(this, file);
             }
 

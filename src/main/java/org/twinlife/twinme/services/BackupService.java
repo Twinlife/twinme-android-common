@@ -21,8 +21,8 @@ import androidx.annotation.Nullable;
 import org.twinlife.twinlife.BackupInfo;
 import org.twinlife.twinlife.BackupService.BackupState;
 import org.twinlife.twinlife.BackupService.RestoreState;
-import org.twinlife.twinlife.BaseService;
 import org.twinlife.twinlife.Consumer;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.JobService;
 import org.twinlife.twinlife.RepositoryObject;
 import org.twinlife.twinlife.backup.RestoreContent;
@@ -282,7 +282,7 @@ public class BackupService extends Service {
     private org.twinlife.twinlife.BackupService.ErrorCode mBackupErrorCode;
 
     @Nullable
-    private BaseService.ErrorCode mBaseErrorCode;
+    private ErrorCode mBaseErrorCode;
 
     @Nullable
     private BackupHeaderInfo mBackupHeaderInfo;
@@ -398,13 +398,13 @@ public class BackupService extends Service {
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
@@ -412,7 +412,7 @@ public class BackupService extends Service {
 
         if (password == null && mPasswordWords == null) {
             //No explicit password, and no password generated beforehand => abort.
-            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.INVALID_KEY, BaseService.ErrorCode.ENCRYPT_ERROR);
+            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.INVALID_KEY, ErrorCode.ENCRYPT_ERROR);
             return;
         }
 
@@ -422,14 +422,14 @@ public class BackupService extends Service {
         }
 
         if (mPasswordWords == null) {
-            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, BaseService.ErrorCode.ENCRYPT_ERROR);
+            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, ErrorCode.ENCRYPT_ERROR);
             return;
         }
 
         byte[] passwordBytes = getMnemonicCodeUtils().toEntropy(mPasswordWords);
 
         if (passwordBytes == null) {
-            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, BaseService.ErrorCode.ENCRYPT_ERROR);
+            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, ErrorCode.ENCRYPT_ERROR);
             return;
         }
 
@@ -475,13 +475,13 @@ public class BackupService extends Service {
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
@@ -497,12 +497,12 @@ public class BackupService extends Service {
         }
 
         if (password == null) {
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, BaseService.ErrorCode.DECRYPT_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, ErrorCode.DECRYPT_ERROR);
             return;
         }
 
         if (filePath == null) {
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INVALID_FILE, BaseService.ErrorCode.FILE_NOT_FOUND);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INVALID_FILE, ErrorCode.FILE_NOT_FOUND);
             return;
         }
 
@@ -519,13 +519,13 @@ public class BackupService extends Service {
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
@@ -539,13 +539,13 @@ public class BackupService extends Service {
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
@@ -564,7 +564,7 @@ public class BackupService extends Service {
         mPasswordWords = getMnemonicCodeUtils().toMnemonic(password);
 
         if (mPasswordWords == null) {
-            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, BaseService.ErrorCode.ENCRYPT_ERROR);
+            onBackupError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, ErrorCode.ENCRYPT_ERROR);
             return;
         }
 
@@ -578,13 +578,13 @@ public class BackupService extends Service {
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            consumer.onGet(BaseService.ErrorCode.LIBRARY_ERROR, null);
+            consumer.onGet(ErrorCode.LIBRARY_ERROR, null);
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            consumer.onGet(BaseService.ErrorCode.LIBRARY_ERROR, null);
+            consumer.onGet(ErrorCode.LIBRARY_ERROR, null);
             return;
         }
 
@@ -598,13 +598,13 @@ public class BackupService extends Service {
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            consumer.onGet(BaseService.ErrorCode.LIBRARY_ERROR, Collections.emptyList());
+            consumer.onGet(ErrorCode.LIBRARY_ERROR, Collections.emptyList());
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            consumer.onGet(BaseService.ErrorCode.LIBRARY_ERROR, Collections.emptyList());
+            consumer.onGet(ErrorCode.LIBRARY_ERROR, Collections.emptyList());
             return;
         }
 
@@ -618,13 +618,13 @@ public class BackupService extends Service {
 
         if (mBackupService == null) {
             Log.e(LOG_TAG, "mBackupService is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
         if (mTwinmeContext == null) {
             Log.e(LOG_TAG, "mTwinmeContext is null");
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, BaseService.ErrorCode.LIBRARY_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INTERNAL_ERROR, ErrorCode.LIBRARY_ERROR);
             return;
         }
 
@@ -633,12 +633,12 @@ public class BackupService extends Service {
         String filePath = intent.getStringExtra(PARAM_FILE_PATH);
 
         if (password == null) {
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, BaseService.ErrorCode.DECRYPT_ERROR);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.KEY_GEN_FAILED, ErrorCode.DECRYPT_ERROR);
             return;
         }
 
         if (filePath == null) {
-            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INVALID_FILE, BaseService.ErrorCode.FILE_NOT_FOUND);
+            onRestoreError(org.twinlife.twinlife.BackupService.ErrorCode.INVALID_FILE, ErrorCode.FILE_NOT_FOUND);
             return;
         }
 
@@ -769,7 +769,7 @@ public class BackupService extends Service {
         finish();
     }
 
-    private void onBackupError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, BaseService.ErrorCode baseErrorCode) {
+    private void onBackupError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, ErrorCode baseErrorCode) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onBackupError: backupErrorCode=" + backupErrorCode + " baseErrorCode=" + baseErrorCode);
         }
@@ -779,7 +779,7 @@ public class BackupService extends Service {
         sendMessage(MESSAGE_BACKUP_ERROR);
     }
 
-    private void onRestoreError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, @Nullable BaseService.ErrorCode baseErrorCode) {
+    private void onRestoreError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, @Nullable ErrorCode baseErrorCode) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onRestoreError: errorCode=" + backupErrorCode + " parameter=" + baseErrorCode);
         }
@@ -946,12 +946,12 @@ public class BackupService extends Service {
         }
 
         @Override
-        public void onBackupError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, @NonNull BaseService.ErrorCode baseErrorCode) {
+        public void onBackupError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, @NonNull ErrorCode baseErrorCode) {
             BackupService.this.onBackupError(backupErrorCode, baseErrorCode);
         }
 
         @Override
-        public void onRestoreError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, @NonNull BaseService.ErrorCode baseErrorCode) {
+        public void onRestoreError(@NonNull org.twinlife.twinlife.BackupService.ErrorCode backupErrorCode, @NonNull ErrorCode baseErrorCode) {
             BackupService.this.onRestoreError(backupErrorCode, baseErrorCode);
         }
 

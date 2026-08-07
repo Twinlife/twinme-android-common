@@ -19,23 +19,21 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.firebase.messaging.FirebaseMessaging;
-
 import org.twinlife.twinlife.AssertPoint;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConnectionStatus;
 import org.twinlife.twinlife.ConversationService;
 import org.twinlife.twinlife.ConversationService.Conversation;
 import org.twinlife.twinlife.ConversationService.GroupConversation;
 import org.twinlife.twinlife.ConversationService.InvitationDescriptor;
 import org.twinlife.twinlife.JobService;
-import org.twinlife.twinlife.ManagementService;
 import org.twinlife.twinlife.RepositoryService;
 import org.twinlife.twinlife.Twinlife;
 import org.twinlife.twinlife.util.EventMonitor;
 import org.twinlife.twinlife.util.Utils;
 import org.twinlife.twinme.FeatureUtils;
 import org.twinlife.twinme.calls.telecom.TelecomUtils;
+import org.twinlife.twinme.notificationCenter.PushTokenManager;
 import org.twinlife.twinme.ui.TwinmeApplication;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Contact;
@@ -390,6 +388,7 @@ public class AdminService {
             Log.d(LOG_TAG, "onTwinlifeReady");
         }
         mTwinmeContext.getConversationService().addServiceObserver(mConversationServiceObserver);
+        mTwinmeContext.getPeerConnectionService().setIceTransportMode(mApplication.getIceTransportMode());
 
         if (mApplication instanceof Application) {
             Application app = (Application) mApplication;
@@ -432,22 +431,7 @@ public class AdminService {
             }
         }
 
-        try {
-            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
-                if (!task.isSuccessful() || task.getResult() == null) {
-                    Log.w(LOG_TAG, "Cannot get Firebase token: " + task.getException());
-                    return;
-                }
-
-                // Get new Instance ID token
-                String pushNotificationToken = task.getResult();
-                mTwinmeContext.getManagementService().setPushNotificationToken(ManagementService.PUSH_NOTIFICATION_FIREBASE_VARIANT, pushNotificationToken);
-            });
-
-        } catch (Exception exception) {
-            // Exceptions can be raised because we cannot trust FCM.
-            Log.w(LOG_TAG, "Firebase exception: " + exception.getMessage());
-        }
+        setPushNotificationToken();
 
         if (mLastVersion == null) {
             mLastVersion = mApplication.getLastVersion();
@@ -471,22 +455,17 @@ public class AdminService {
             Log.d(LOG_TAG, "setPushNotificationToken");
         }
 
-        try {
-            FirebaseMessaging.getInstance().getToken().addOnCompleteListener(task -> {
-                if (!task.isSuccessful() || task.getResult() == null) {
-                    Log.w(LOG_TAG, "Cannot get Firebase token: " + task.getException());
-                    return;
-                }
-
-                // Get new Instance ID token
-                String pushNotificationToken = task.getResult();
-                mTwinmeContext.getManagementService().setPushNotificationToken(ManagementService.PUSH_NOTIFICATION_FIREBASE_VARIANT, pushNotificationToken);
-            });
-
-        } catch (Exception exception) {
-            // Exceptions can be raised because we cannot trust FCM.
-            Log.w(LOG_TAG, "Firebase exception: " + exception.getMessage());
+        if (!(mApplication instanceof Context)) {
+            Log.e(LOG_TAG, "mApplication " + mApplication + " is not a Context, this should not happen");
+            return;
         }
+
+        PushTokenManager pushTokenManager = PushTokenManager.INSTANCE;
+        pushTokenManager.createToken((Context) mApplication, (token) -> {
+            if (token != null && !token.trim().isEmpty()) {
+                mTwinmeContext.getManagementService().setPushNotificationToken(pushTokenManager.getPushProvider(), token);
+            }
+        });
     }
 
     private void onTwinlifeOnline() {

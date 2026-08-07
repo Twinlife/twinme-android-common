@@ -18,7 +18,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService;
 import org.twinlife.twinlife.ConversationService.Descriptor;
 import org.twinlife.twinlife.ConversationService.TwincodeDescriptor;
@@ -42,6 +42,7 @@ import org.twinlife.twinme.models.Profile;
 import org.twinlife.twinme.models.Space;
 import org.twinlife.twinme.ui.TwinmeActivity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -76,6 +77,8 @@ public class AcceptInvitationService extends AbstractTwinmeService {
     private static final int DELETE_NOTIFICATION_DONE = 1 << 24;
     private static final int SET_CURRENT_SPACE = 1 << 25;
     private static final int SET_CURRENT_SPACE_DONE = 1 << 26;
+    private static final int GET_SPACES = 1 << 27;
+    private static final int GET_SPACES_DONE = 1 << 28;
 
     public interface Observer extends AbstractTwinmeService.Observer, SpaceObserver, CurrentSpaceObserver, TwincodeObserver {
 
@@ -191,6 +194,7 @@ public class AcceptInvitationService extends AbstractTwinmeService {
     @Nullable
     private DescriptorId mDescriptorId;
     private Profile mProfile;
+    private final List<Space> mSpaces = new ArrayList<>();
     private int mWork = 0;
     @Nullable
     private Notification mNotification;
@@ -296,6 +300,25 @@ public class AcceptInvitationService extends AbstractTwinmeService {
 
     }
 
+    public int numberSpaces(boolean countSecretSpace) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "numberSpaces: " + countSecretSpace);
+        }
+
+        if (countSecretSpace) {
+            return mSpaces.size();
+        }
+
+        int count = 0;
+        for (Space space : mSpaces) {
+            if (!space.getSpaceSettings().isSecret()) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
     public void dispose() {
         if (DEBUG) {
             Log.d(LOG_TAG, "dispose");
@@ -364,7 +387,28 @@ public class AcceptInvitationService extends AbstractTwinmeService {
         }
 
         //
-        // Step 1: get the current space or the space identified by mSpaceId.
+        // Step 1: get spaces.
+        //
+
+        if ((mState & GET_SPACES) == 0) {
+            mState |= GET_SPACES;
+
+            mTwinmeContext.findSpaces((Space space) -> true, (ErrorCode errorCode, List<Space> spaces) -> {
+                mSpaces.clear();
+                if (spaces != null) {
+                    mSpaces.addAll(spaces);
+                }
+                mState |= GET_SPACES_DONE;
+                onOperation();
+            });
+            return;
+        }
+        if ((mState & GET_SPACES_DONE) == 0) {
+            return;
+        }
+
+        //
+        // Step 2: get the current space or the space identified by mSpaceId.
         //
         if ((mState & GET_SPACE) == 0) {
             mState |= GET_SPACE;

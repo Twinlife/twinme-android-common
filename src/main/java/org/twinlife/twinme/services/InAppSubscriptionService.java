@@ -15,7 +15,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.twinlife.twinlife.AccountService;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinme.TwinmeApplication;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Profile;

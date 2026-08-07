@@ -14,8 +14,8 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
 import org.twinlife.twinlife.ConnectivityService;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ProxyDescriptor;
 import org.twinlife.twinlife.SNIProxyDescriptor;
 import org.twinlife.twinlife.TwincodeURI;
@@ -127,12 +127,12 @@ public class ProxyService extends AbstractTwinmeService {
         super.onTwinlifeReady();
     }
 
-    private void onParseURI(@NonNull BaseService.ErrorCode errorCode, @Nullable TwincodeURI twincodeUri) {
+    private void onParseURI(@NonNull ErrorCode errorCode, @Nullable TwincodeURI twincodeUri) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onParseURI: errorCode=" + errorCode + " twincodeUri=" + twincodeUri);
         }
 
-        if (errorCode != BaseService.ErrorCode.SUCCESS || twincodeUri == null) {
+        if (errorCode != ErrorCode.SUCCESS || twincodeUri == null) {
             runOnUiThread(() -> {
                 if (mObserver != null) {
                     mObserver.onErrorAddProxy();
@@ -183,13 +183,13 @@ public class ProxyService extends AbstractTwinmeService {
     }
 
     @Override
-    protected void onError(int operationId, BaseService.ErrorCode errorCode, @Nullable String errorParameter) {
+    protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
         }
 
         // Wait for reconnection
-        if (errorCode == BaseService.ErrorCode.TWINLIFE_OFFLINE) {
+        if (errorCode == ErrorCode.TWINLIFE_OFFLINE) {
             mRestarted = true;
 
             return;

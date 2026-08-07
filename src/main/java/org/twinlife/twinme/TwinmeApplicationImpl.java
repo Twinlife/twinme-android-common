@@ -12,7 +12,6 @@ package org.twinlife.twinme;
 
 import android.app.Application;
 import android.content.Context;
-import android.os.Environment;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -28,14 +27,19 @@ import org.twinlife.twinlife.job.SchedulerJobServiceImpl;
 import org.twinlife.twinlife.util.Logger;
 import org.twinlife.twinme.ui.TwinmeApplication;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public abstract class TwinmeApplicationImpl extends Application implements TwinmeApplication {
     private static final String LOG_TAG = "TwinmeApplicationImpl";
     private static final boolean DEBUG = false;
+    private static final int IV_LENGTH_BYTES = 16;
+    private static final int KEY_LENGTH_BYTES = 32;
+
     protected static WeakReference<TwinmeApplicationImpl> sInstance;
 
     private volatile boolean mRunning = false;
@@ -90,18 +94,18 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
         return null;
     }
 
-    @Override
-    public void onCreate() {
+    /**
+     * Initialize the application by creating the twinme context and twinlife services.
+     * Schedule the `setup` method with the twinme context from the twinlife executor's thread.
+     * It is executed BEFORE the twinlife library is configured.  This allows to do some specific
+     * setup before the twinlife library is configured and without blocking the current thread.
+     * @param setup the setup to execute with the twinme context.
+     */
+    public void initialize(@NonNull TwinmeContext.Consumer<TwinmeContext> setup) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onCreate");
+            Log.d(LOG_TAG, "initialize");
         }
 
-        super.onCreate();
-
-        //
-        // Debug only
-        //
-        // storeLog();
         final AndroidConfigurationServiceImpl configurationService = new AndroidConfigurationServiceImpl(this);
 
         mRunning = true;
@@ -109,6 +113,8 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
 
         mTwinmeContext = new TwinmeContextImpl(this, mTwinmeConfiguration, mJobService, configurationService);
         mJobService.setTwinlifeContext(mTwinmeContext);
+
+        mTwinmeContext.execute(() -> setup.accept(mTwinmeContext));
 
         mTwinlifeServiceConnectionImpl = new TwinlifeServiceConnectionImpl((TwinlifeContextImpl) mTwinmeContext, this, configurationService);
         mTwinlifeServiceConnectionImpl.start();
@@ -253,7 +259,39 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
                 if (configStream != null) {
                     byte[] data = new byte[4096];
                     int length = configStream.read(data);
-                    data = TwinlifeServiceConnectionImpl.decrypt(data, length);
+
+                    SecretKeySpec securedKey;
+                    long seed = twinmeConfiguration.getSerial();
+                    byte[] keystream = new byte[length];
+                    for (int i = 0; i < 48; i++) {
+                        keystream[i] = (byte) seed;
+                        seed = seed * 31 + (data[i] ^ keystream[i]);
+                    }
+                    for (int i = 48; i < keystream.length; i++) {
+                        seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+                        keystream[i] = (byte) seed;
+                    }
+
+                    for (int i = 0; i < length; i++) {
+                        data[i] = (byte) (data[i] ^ keystream[i]);
+                    }
+                    byte[] key = new byte[KEY_LENGTH_BYTES];
+                    System.arraycopy(data, 0, key, 0, KEY_LENGTH_BYTES);
+                    securedKey = new SecretKeySpec(key, "AES");
+
+                    final Cipher cipher;
+                    final byte[] iv = new byte[IV_LENGTH_BYTES];
+                    System.arraycopy(data, key.length, iv, 0, IV_LENGTH_BYTES);
+
+                    final byte[] mode = new byte[data[iv.length + key.length]];
+                    System.arraycopy(data, iv.length + key.length + 1, mode, 0, mode.length);
+
+                    cipher = Cipher.getInstance(new String(mode));
+                    cipher.init(Cipher.DECRYPT_MODE, securedKey, new IvParameterSpec(iv));
+
+                    final byte[] encryptedData = new byte[length - iv.length - key.length - 1 - mode.length];
+                    System.arraycopy(data, iv.length + key.length + 1 + mode.length, encryptedData, 0, encryptedData.length);
+                    data = cipher.doFinal(encryptedData);
 
                     if (data != null) {
                         twinmeConfiguration.read(data);
@@ -263,37 +301,6 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
                 // Don't crash, don't report a log, the user will see the Fatal error view with a message.
                 if (Logger.DEBUG) {
                     Log.e(LOG_TAG, "Error:", ex);
-                }
-            }
-        }
-    }
-
-    //
-    // Private Methods
-    //
-
-    @SuppressWarnings("unused")
-    private void storeLog() {
-
-        String state = Environment.getExternalStorageState();
-        if (!Environment.MEDIA_MOUNTED.equals(state)) {
-
-            return;
-        }
-
-        File appDirectory = new File(Environment.getExternalStorageDirectory() + "/twinme");
-        if (!appDirectory.exists()) {
-            if (appDirectory.mkdir()) {
-                File logDirectory = new File(appDirectory + "/log");
-                if (!logDirectory.exists()) {
-                    if (logDirectory.mkdir()) {
-                        File logFile = new File(logDirectory, "logcat" + System.currentTimeMillis() + ".txt");
-                        //noinspection EmptyCatchBlock
-                        try {
-                            Runtime.getRuntime().exec("logcat -v threadtime -f " + logFile + " ActivityManager:I twinme:V");
-                        } catch (IOException exception) {
-                        }
-                    }
                 }
             }
         }

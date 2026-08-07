@@ -10,7 +10,6 @@ package org.twinlife.twinme.util;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 

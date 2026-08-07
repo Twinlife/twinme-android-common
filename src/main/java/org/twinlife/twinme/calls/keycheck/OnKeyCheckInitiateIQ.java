@@ -10,7 +10,7 @@ package org.twinlife.twinme.calls.keycheck;
 
 import androidx.annotation.NonNull;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.BuildConfig;
 import org.twinlife.twinlife.Decoder;
 import org.twinlife.twinlife.Encoder;

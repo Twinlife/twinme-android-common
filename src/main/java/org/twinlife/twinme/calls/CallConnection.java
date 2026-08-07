@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022-2025 twinlife SA.
+ *  Copyright (c) 2022-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -21,7 +21,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService.Descriptor;
 import org.twinlife.twinlife.ConversationService.DescriptorId;
 import org.twinlife.twinlife.ConversationService.GeolocationDescriptor;
@@ -53,7 +53,7 @@ import org.twinlife.twinme.calls.streaming.StreamingInfoIQ;
 import org.twinlife.twinme.calls.streaming.StreamingRequestIQ;
 import org.twinlife.twinme.calls.streaming.StreamingStatus;
 import org.twinlife.twinme.models.Zoomable;
-import org.twinlife.twinme.utils.CommonUtils;
+import org.twinlife.twinme.utils.PlatformSpecificUtils;
 import org.webrtc.AudioTrack;
 import org.webrtc.EglBase;
 import org.webrtc.MediaStreamTrack;
@@ -143,8 +143,6 @@ public final class CallConnection extends ConversationHandler {
     @NonNull
     private volatile ConnectionState mConnectionState;
 
-    @NonNull
-    private final Map<UUID, CallParticipant> mParticipants;
     @NonNull
     private CallState mCall;
     @NonNull
@@ -526,38 +524,36 @@ public final class CallConnection extends ConversationHandler {
         mPeerVersion = null;
         mVideo = callStatus.isVideo();
         mCallMemberId = memberId;
-        mParticipants = new HashMap<>();
         mMainParticipant = new CallParticipant(this, call.allocateParticipantId());
         if (peerConnectionId != null) {
-            mParticipants.put(peerConnectionId, mMainParticipant);
             mCall.onAddParticipant(mMainParticipant);
         }
 
-        addListener(IQ_PARTICIPANT_INFO_SERIALIZER, this::onParticipantInfoIQ);
-        addListener(IQ_PARTICIPANT_TRANSFER_SERIALIZER, this::onParticipantTransferIQ);
-        addListener(IQ_TRANSFER_DONE_SERIALIZER, this::onTransferDoneIQ);
-        addListener(IQ_PREPARE_TRANSFER_SERIALIZER, this::onPrepareTransferIQ);
-        addListener(IQ_ON_PREPARE_TRANSFER_SERIALIZER, this::onOnPrepareTransferIQ);
+        addPacketListener(IQ_PARTICIPANT_INFO_SERIALIZER, this::onParticipantInfoIQ);
+        addPacketListener(IQ_PARTICIPANT_TRANSFER_SERIALIZER, this::onParticipantTransferIQ);
+        addPacketListener(IQ_TRANSFER_DONE_SERIALIZER, this::onTransferDoneIQ);
+        addPacketListener(IQ_PREPARE_TRANSFER_SERIALIZER, this::onPrepareTransferIQ);
+        addPacketListener(IQ_ON_PREPARE_TRANSFER_SERIALIZER, this::onOnPrepareTransferIQ);
 
-        addListener(IQ_STREAMING_INFO_SERIALIZER, this::onStreamingInfoIQ);
-        addListener(IQ_STREAMING_CONTROL_SERIALIZER, this::onStreamingControlIQ);
-        addListener(IQ_STREAMING_DATA_SERIALIZER, this::onStreamingDataIQ);
-        addListener(IQ_STREAMING_REQUEST_SERIALIZER, this::onStreamingRequestIQ);
+        addPacketListener(IQ_STREAMING_INFO_SERIALIZER, this::onStreamingInfoIQ);
+        addPacketListener(IQ_STREAMING_CONTROL_SERIALIZER, this::onStreamingControlIQ);
+        addPacketListener(IQ_STREAMING_DATA_SERIALIZER, this::onStreamingDataIQ);
+        addPacketListener(IQ_STREAMING_REQUEST_SERIALIZER, this::onStreamingRequestIQ);
 
-        addListener(IQ_HOLD_CALL_SERIALIZER, this::onHoldCallIQ);
-        addListener(IQ_RESUME_CALL_SERIALIZER, this::onResumeCallIQ);
+        addPacketListener(IQ_HOLD_CALL_SERIALIZER, this::onHoldCallIQ);
+        addPacketListener(IQ_RESUME_CALL_SERIALIZER, this::onResumeCallIQ);
 
-        addListener(IQ_KEY_CHECK_INITIATE_SERIALIZER, this::onKeyCheckInitiateIQ);
-        addListener(IQ_ON_KEY_CHECK_INITIATE_SERIALIZER, this::onOnKeyCheckInitiateIQ);
-        addListener(IQ_WORD_CHECK_SERIALIZER, this::onWordCheckIQ);
-        addListener(IQ_TERMINATE_KEY_CHECK_SERIALIZER, this::onTerminateKeyCheckIQ);
-        addListener(IQ_TWINCODE_URI_SERIALIZER, this::onTwincodeUriIQ);
+        addPacketListener(IQ_KEY_CHECK_INITIATE_SERIALIZER, this::onKeyCheckInitiateIQ);
+        addPacketListener(IQ_ON_KEY_CHECK_INITIATE_SERIALIZER, this::onOnKeyCheckInitiateIQ);
+        addPacketListener(IQ_WORD_CHECK_SERIALIZER, this::onWordCheckIQ);
+        addPacketListener(IQ_TERMINATE_KEY_CHECK_SERIALIZER, this::onTerminateKeyCheckIQ);
+        addPacketListener(IQ_TWINCODE_URI_SERIALIZER, this::onTwincodeUriIQ);
 
-        addListener(IQ_SCREEN_SHARING_ON_SERIALIZER, this::onScreenSharingOnIQ);
-        addListener(IQ_SCREEN_SHARING_OFF_SERIALIZER, this::onScreenSharingOffIQ);
+        addPacketListener(IQ_SCREEN_SHARING_ON_SERIALIZER, this::onScreenSharingOnIQ);
+        addPacketListener(IQ_SCREEN_SHARING_OFF_SERIALIZER, this::onScreenSharingOffIQ);
 
-        addListener(IQ_CAMERA_CONTROL_SERIALIZER, this::onCameraControlIQ);
-        addListener(IQ_CAMERA_RESPONSE_SERIALIZER, this::onCameraResponseIQ);
+        addPacketListener(IQ_CAMERA_CONTROL_SERIALIZER, this::onCameraControlIQ);
+        addPacketListener(IQ_CAMERA_RESPONSE_SERIALIZER, this::onCameraResponseIQ);
 
         mStreamingStatus = StreamingStatus.UNKNOWN;
     }
@@ -788,9 +784,11 @@ public final class CallConnection extends ConversationHandler {
     }
 
     synchronized void addRemoteMediaStreamTrack(@NonNull final MediaStreamTrack mediaStream) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "addRemoteMediaStreamTrack: " + mPeerConnectionId + " mediaStream=" + mediaStream);
+        }
 
-        CallParticipant participant = getMainParticipant();
-
+        final CallParticipant participant = getMainParticipant();
         if (mediaStream instanceof VideoTrack) {
             try {
                 // Be careful that the MediaStreamTrack could have been disposed!
@@ -799,7 +797,6 @@ public final class CallConnection extends ConversationHandler {
 
                 SurfaceViewRenderer remoteRenderer = participant.getRemoteRenderer();
                 if (remoteRenderer == null) {
-
                     return;
                 }
 
@@ -810,7 +807,6 @@ public final class CallConnection extends ConversationHandler {
             } catch (IllegalStateException ex) {
                 if (DEBUG) {
                     Log.d(LOG_TAG, "VideoTrack has been disposed");
-
                 }
             }
         } else if (mediaStream instanceof AudioTrack) {
@@ -861,30 +857,8 @@ public final class CallConnection extends ConversationHandler {
 
         if (mPeerConnectionId == null) {
             mPeerConnectionId = peerConnectionId;
-            mParticipants.put(peerConnectionId, mMainParticipant);
             mCall.onAddParticipant(mMainParticipant);
         }
-    }
-
-
-    /*
-     * Telecom API callbacks.
-     */
-
-    public void showIncomingCallUi() {
-        if (DEBUG) {
-            Log.d(LOG_TAG, "showIncomingCallUi");
-        }
-
-        mCall.showIncomingCallUi(this);
-    }
-
-    public void onCallAudioStateChanged(@NonNull AudioDevice activeDevice, @NonNull Set<AudioDevice> availableDevices) {
-        if (DEBUG) {
-            Log.d(LOG_TAG, "onCallAudioStateChanged: activeDevice=" + activeDevice + " availableDevices=" + availableDevices);
-        }
-
-        mCall.onCallAudioStateChanged(activeDevice, availableDevices);
     }
 
     synchronized void setDeviceRinging() {
@@ -902,7 +876,9 @@ public final class CallConnection extends ConversationHandler {
             Log.d(LOG_TAG, "getParticipants: into=" + into);
         }
 
-        into.addAll(mParticipants.values());
+        if (mPeerConnectionId != null) {
+            into.add(mMainParticipant);
+        }
     }
 
     synchronized void putState(@NonNull Intent intent) {
@@ -938,10 +914,8 @@ public final class CallConnection extends ConversationHandler {
         }
 
         // Release the remote renderer for each peer connection.
-        final List<CallParticipant> participants = new ArrayList<>(mParticipants.values());
-        if (participants.isEmpty()) {
-            participants.add(mMainParticipant);
-        }
+        final List<CallParticipant> participants = new ArrayList<>(1);
+        participants.add(mMainParticipant);
         for (CallParticipant participant : participants) {
             participant.release();
         }
@@ -971,7 +945,7 @@ public final class CallConnection extends ConversationHandler {
                 zoomCapability = "";
                 break;
         }
-        if (BuildConfig.IS_SKRED && CommonUtils.isGooglePlayServicesAvailable(getCall().getContext())) {
+        if (BuildConfig.IS_SKRED && PlatformSpecificUtils.isGooglePlayServicesAvailable(getCall().getContext())) {
             return DATA_VERSION + ":" + CAP_STREAM + "," + CAP_TRANSFER + "," + CAP_MESSAGE + "," + CAP_GEOLOCATION + zoomCapability;
         } else {
             return DATA_VERSION + ":" + CAP_STREAM + "," + CAP_TRANSFER + "," + CAP_MESSAGE + zoomCapability;

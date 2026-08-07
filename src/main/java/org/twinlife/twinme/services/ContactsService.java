@@ -18,13 +18,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.twinlife.twinlife.Filter;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.RepositoryObject;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Contact;
 import org.twinlife.twinme.models.Space;
 import org.twinlife.twinme.ui.TwinmeActivity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,11 +39,17 @@ public class ContactsService extends AbstractTwinmeService {
     private static final int GET_CONTACTS_DONE = 1 << 3;
     private static final int FIND_CONTACTS = 1 << 4;
     private static final int FIND_CONTACTS_DONE = 1 << 5;
+    private static final int GET_SPACES = 1 << 6;
+    private static final int GET_SPACES_DONE = 1 << 7;
 
     public interface Observer extends AbstractTwinmeService.Observer, AbstractTwinmeService.ContactListObserver,
             AbstractTwinmeService.CurrentSpaceObserver, ContactObserver {
 
         void onCreateContact(@NonNull Contact contact, @Nullable Bitmap avatar);
+
+        default void onUpdateSpace(@NonNull Space space) {
+            // Optionnal
+        }
     }
 
     private class TwinmeContextObserver extends AbstractTwinmeService.TwinmeContextObserver {
@@ -100,6 +107,7 @@ public class ContactsService extends AbstractTwinmeService {
     private int mWork = 0;
     @Nullable
     private String mFindName;
+    private final List<Space> mSpaces = new ArrayList<>();
 
     public ContactsService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull ContactsService.Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
@@ -132,6 +140,48 @@ public class ContactsService extends AbstractTwinmeService {
         mFindName = normalize(name);
 
         startOperation();
+    }
+
+    public void updateSpace(@NonNull UUID spaceId) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "updateSpace: spaceId=" + spaceId);
+        }
+
+        for (Space space : mSpaces) {
+            if (space.getId().equals(spaceId)) {
+                mSpace = space;
+
+                runOnUiThread(() -> {
+                    if (mObserver != null) {
+                        mObserver.onUpdateSpace(mSpace);
+                    }
+                });
+
+                break;
+            }
+        }
+
+        mState &= ~(GET_CONTACTS | GET_CONTACTS_DONE);
+        onOperation();
+    }
+
+    public int numberSpaces(boolean countSecretSpace) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "numberSpaces: " + countSecretSpace);
+        }
+
+        if (countSecretSpace) {
+            return mSpaces.size();
+        }
+
+        int count = 0;
+        for (Space space : mSpaces) {
+            if (!space.getSpaceSettings().isSecret()) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     @Override
@@ -209,7 +259,28 @@ public class ContactsService extends AbstractTwinmeService {
         }
 
         //
-        // Step 1: Get the current space.
+        // Step 1: get spaces.
+        //
+
+        if ((mState & GET_SPACES) == 0) {
+            mState |= GET_SPACES;
+
+            mTwinmeContext.findSpaces((Space space) -> true, (ErrorCode errorCode, List<Space> spaces) -> {
+                mSpaces.clear();
+                if (spaces != null) {
+                    mSpaces.addAll(spaces);
+                }
+                mState |= GET_SPACES_DONE;
+                onOperation();
+            });
+            return;
+        }
+        if ((mState & GET_SPACES_DONE) == 0) {
+            return;
+        }
+
+        //
+        // Step 2: Get the current space.
         //
         if ((mState & GET_CURRENT_SPACE) == 0) {
             mState |= GET_CURRENT_SPACE;
@@ -217,6 +288,13 @@ public class ContactsService extends AbstractTwinmeService {
             mTwinmeContext.getCurrentSpace((ErrorCode errorCode, Space space) -> {
                 mState |= GET_CURRENT_SPACE_DONE;
                 mSpace = space;
+
+                runOnUiThread(() -> {
+                    if (mObserver != null) {
+                        mObserver.onUpdateSpace(mSpace);
+                    }
+                });
+
                 onOperation();
             });
             return;
@@ -231,7 +309,7 @@ public class ContactsService extends AbstractTwinmeService {
         if ((mState & GET_CONTACTS) == 0) {
             mState |= GET_CONTACTS;
 
-            final Filter<RepositoryObject> filter = mTwinmeContext.createSpaceFilter();
+            final Filter<RepositoryObject> filter = new Filter<>(mSpace);
             mTwinmeContext.findContacts(filter, (List<Contact> contacts) -> {
                 runOnGetContacts(mObserver, contacts);
                 mState |= GET_CONTACTS_DONE;

@@ -20,7 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.twinlife.twinlife.AndroidImageTools;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.Consumer;
 import org.twinlife.twinlife.ImageTools;
 import org.twinlife.twinlife.PeerConnectionService;

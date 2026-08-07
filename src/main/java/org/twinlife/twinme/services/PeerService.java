@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2024 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -9,9 +9,11 @@
 
 package org.twinlife.twinme.services;
 
+import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ServiceInfo;
 import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
@@ -22,13 +24,15 @@ import androidx.annotation.Nullable;
 import org.twinlife.twinlife.AssertPoint;
 import org.twinlife.twinlife.JobService;
 import org.twinlife.twinlife.util.EventMonitor;
+import org.twinlife.twinlife.util.Logger;
 import org.twinlife.twinme.NotificationCenter;
 import org.twinlife.twinme.TwinmeApplication;
-import org.twinlife.twinme.TwinmeAssertPoint;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.calls.CallService;
 import org.twinlife.twinme.ui.Intents;
 import org.twinlife.twinme.TwinmeApplicationImpl;
+
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * Peer foreground connection service.
@@ -56,7 +60,9 @@ public class PeerService extends Service implements JobService.Observer {
     private int mNotificationId = 0;
     @Nullable
     private JobService.ProcessingLock mProcessingLock;
-    private long startTime = -1;
+    private long mStartTime = -1;
+    @Nullable
+    private ScheduledFuture<?> mStopService;
 
     public static void forceStop(@NonNull Context context) {
         if (DEBUG) {
@@ -71,7 +77,7 @@ public class PeerService extends Service implements JobService.Observer {
             sTransferringData = false;
             try {
                 // With Android 9, if the user forbids the application to start a foreground service when it is in background,
-                // starting the PeerService will proceed but we are not aware of the problem: the foreground service is
+                // starting the PeerService will proceed, but we are not aware of the problem: the foreground service is
                 // simply ignored and has no effect on keeping the application running.
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent);
@@ -103,7 +109,7 @@ public class PeerService extends Service implements JobService.Observer {
             try {
 
                 // With Android 9, if the user forbids the application to start a foreground service when it is in background,
-                // starting the PeerService will proceed but we are not aware of the problem: the foreground service is
+                // starting the PeerService will proceed, but we are not aware of the problem: the foreground service is
                 // simply ignored and has no effect on keeping the application running.
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     context.startForegroundService(intent);
@@ -126,7 +132,7 @@ public class PeerService extends Service implements JobService.Observer {
 
         mNotificationId = NotificationCenter.FOREGROUND_SERVICE_NOTIFICATION_ID;
         sIsRunning = true;
-        startTime = System.currentTimeMillis();
+        mStartTime = System.currentTimeMillis();
         initialize();
     }
 
@@ -189,8 +195,8 @@ public class PeerService extends Service implements JobService.Observer {
 
         if (mTwinmeContext != null) {
             long duration = -1;
-            if (startTime != -1) {
-                duration = System.currentTimeMillis() - startTime;
+            if (mStartTime != -1) {
+                duration = System.currentTimeMillis() - mStartTime;
             }
 
             mTwinmeContext.assertion(ServiceAssertPoint.SERVICE_TIMEOUT, AssertPoint.createLength(duration));
@@ -201,7 +207,12 @@ public class PeerService extends Service implements JobService.Observer {
 
     @Override
     public void onEnterForeground() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onEnterForeground");
+        }
 
+        // We are now in foreground: we can stop the peer service since we don't need it anymore.
+        finish();
     }
 
     @Override
@@ -216,7 +227,15 @@ public class PeerService extends Service implements JobService.Observer {
 
     @Override
     public void onBackgroundNetworkStop() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onBackgroundNetworkStop");
+        }
 
+        // Wait 1s before asking the service to stop because sometimes a new P2P connection
+        // is started 100 to 500ms after and we won't be able to start it again.
+        if (mJobService != null) {
+            mStopService = mJobService.schedule(this::stopPeerService, 1000);
+        }
     }
 
     @Override
@@ -224,7 +243,8 @@ public class PeerService extends Service implements JobService.Observer {
 
         if (mNotificationCenter != null) {
             sTransferringData = count > 0;
-            mNotificationCenter.startForegroundService(this, sTransferringData);
+            Notification notification = mNotificationCenter.createPeerServiceNotification(sTransferringData);
+            startForegroundCompat(notification);
         }
     }
 
@@ -273,8 +293,6 @@ public class PeerService extends Service implements JobService.Observer {
             Log.d(LOG_TAG, "onServiceExpire");
         }
 
-        EventMonitor.event("Foreground service is finished");
-
         finish();
     }
 
@@ -308,7 +326,46 @@ public class PeerService extends Service implements JobService.Observer {
         }
 
         // Make the notification and call startForeground() as soon as possible: we use the "Transferring messages" notification.
-        mNotificationCenter.startForegroundService(this, sTransferringData);
+        Notification notification = mNotificationCenter.createPeerServiceNotification(sTransferringData);
+        startForegroundCompat(notification);
+    }
+
+    private void startForegroundCompat(@NonNull Notification notification) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "startForegroundCompat notification=" + notification);
+        }
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                startForeground(NotificationCenter.FOREGROUND_SERVICE_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_REMOTE_MESSAGING);
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                startForeground(NotificationCenter.FOREGROUND_SERVICE_NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
+            } else {
+                startForeground(NotificationCenter.FOREGROUND_SERVICE_NOTIFICATION_ID, notification);
+            }
+        } catch (IllegalStateException|SecurityException ex) {
+            if (Logger.ERROR) {
+                Logger.error(LOG_TAG, "startForeground not allowed", ex);
+            }
+
+        } catch (Exception exception) {
+            if (mTwinmeContext != null) {
+                mTwinmeContext.exception(ServiceAssertPoint.START_PEER_SERVICE, exception, null);
+            }
+        }
+    }
+
+    private void stopPeerService() {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "stopPeerService");
+        }
+
+        mStopService = null;
+
+        final boolean isIdle = mJobService == null || mJobService.isIdle();
+        if (isIdle) {
+            finish();
+        }
     }
 
     private void finish() {
@@ -316,6 +373,11 @@ public class PeerService extends Service implements JobService.Observer {
             Log.d(LOG_TAG, "finish");
         }
 
+        EventMonitor.event("Foreground service is finished", mStartTime);
+        if (mStopService != null) {
+            mStopService.cancel(false);
+            mStopService = null;
+        }
         if (mExpire != null) {
             mExpire.cancel();
             mExpire = null;
@@ -325,7 +387,11 @@ public class PeerService extends Service implements JobService.Observer {
             mJobService.removeObserver(this);
         }
 
-        stopForeground(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
         stopSelf();
 
         // Force a cancel of the notification since the service may not be associated with the notification

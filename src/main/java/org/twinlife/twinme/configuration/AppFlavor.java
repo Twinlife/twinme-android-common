@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2024 twinlife SA.
+ *  Copyright (c) 2024-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -15,6 +15,9 @@ public final class AppFlavor {
     public static final boolean TWINME = BuildConfig.IS_TWINME && !BuildConfig.IS_PLUS;
     public static final boolean TWINME_PLUS = BuildConfig.IS_TWINME && BuildConfig.IS_PLUS;
     public static final boolean SKRED = BuildConfig.IS_SKRED;
+
+    public static final boolean GOOGLE = BuildConfig.IS_GOOGLE;
+    public static final boolean HUAWEI = BuildConfig.IS_HUAWEI;
 
     private AppFlavor(){
         throw new AssertionError("Not instantiable");

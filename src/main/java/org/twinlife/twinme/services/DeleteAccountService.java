@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2024 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -9,20 +9,19 @@
 
 package org.twinlife.twinme.services;
 
+import android.content.Context;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.google.firebase.installations.FirebaseInstallations;
-import com.google.firebase.messaging.FirebaseMessaging;
-
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ManagementService;
 import org.twinlife.twinlife.util.EventMonitor;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.configuration.AppFlavor;
 import org.twinlife.twinme.models.Space;
+import org.twinlife.twinme.notificationCenter.PushTokenManager;
 import org.twinlife.twinme.ui.TwinmeActivity;
 
 /**
@@ -33,7 +32,7 @@ public class DeleteAccountService extends AbstractTwinmeService {
     private static final boolean DEBUG = false;
 
     private static final int DELETE_FIREBASE_TOKEN = 1 << 1;
-    private static final int DELETE_FIREBASE_TOKEN_DONE = 1 << 2;
+    private static final int DELETE_PUSH_TOKEN_DONE = 1 << 2;
     private static final int DELETE_FIREBASE_INSTALLATION = 1 << 3;
     private static final int DELETE_FIREBASE_INSTALLATION_DONE = 1 << 4;
     private static final int DELETE_ACCOUNT = 1 << 5;
@@ -77,6 +76,8 @@ public class DeleteAccountService extends AbstractTwinmeService {
 
     @Nullable
     private Observer mObserver;
+    @NonNull
+    private final PushTokenManager mPushTokenManager = PushTokenManager.INSTANCE;
     private int mState = 0;
     private int mWork = 0;
 
@@ -160,35 +161,40 @@ public class DeleteAccountService extends AbstractTwinmeService {
                 mState |= DELETE_FIREBASE_TOKEN;
 
                 if (mTwinmeContext.getManagementService().hasPushNotification()) {
-                    try {
-                        FirebaseMessaging.getInstance().deleteToken().addOnCompleteListener(task -> {
+                    if (mTwinmeApplication instanceof Context) {
+                        try {
+                            String pushProvider = mPushTokenManager.getPushProvider();
+                            mPushTokenManager.deleteToken((Context) mTwinmeApplication, (errorCode) -> {
+                                mState |= DELETE_PUSH_TOKEN_DONE;
 
-                            mState |= DELETE_FIREBASE_TOKEN_DONE;
+                                Log.i(LOG_TAG, pushProvider + " token deleted: " + errorCode);
 
-                            Log.i(LOG_TAG, "Firebase token is deleted");
+                                // Invalidate the notification token.
+                                mTwinmeContext.getManagementService().setPushNotificationToken(pushProvider, "");
+
+                                // Proceed with the next step.
+                                onOperation();
+                            });
+                            return;
+
+                        } catch (Exception exception) {
+                            // Exceptions can be raised because we cannot trust FCM.
+                            Log.w(LOG_TAG, "Firebase exception: " + exception.getMessage());
 
                             // Invalidate the notification token.
                             mTwinmeContext.getManagementService().setPushNotificationToken(ManagementService.PUSH_NOTIFICATION_FIREBASE_VARIANT, "");
 
-                            // Proceed with the next step.
-                            onOperation();
-                        });
-                        return;
-
-                    } catch (Exception exception) {
-                        // Exceptions can be raised because we cannot trust FCM.
-                        Log.w(LOG_TAG, "Firebase exception: " + exception.getMessage());
-
-                        // Invalidate the notification token.
-                        mTwinmeContext.getManagementService().setPushNotificationToken(ManagementService.PUSH_NOTIFICATION_FIREBASE_VARIANT, "");
-
-                        mState |= DELETE_FIREBASE_TOKEN_DONE;
+                            mState |= DELETE_PUSH_TOKEN_DONE;
+                        }
+                    } else {
+                        Log.e(LOG_TAG, "mTwinmeApplication " + mTwinmeApplication + " is not a Context, this should not happen");
+                        mState |= DELETE_PUSH_TOKEN_DONE;
                     }
                 } else {
-                    mState |= DELETE_FIREBASE_TOKEN_DONE;
+                    mState |= DELETE_PUSH_TOKEN_DONE;
                 }
             }
-            if ((mState & DELETE_FIREBASE_TOKEN_DONE) == 0) {
+            if ((mState & DELETE_PUSH_TOKEN_DONE) == 0) {
                 return;
             }
 
@@ -199,23 +205,13 @@ public class DeleteAccountService extends AbstractTwinmeService {
                 mState |= DELETE_FIREBASE_INSTALLATION;
 
                 if (mTwinmeContext.getManagementService().hasPushNotification()) {
-                    try {
-                        FirebaseInstallations.getInstance().delete().addOnCompleteListener(task -> {
-                            mState |= DELETE_FIREBASE_INSTALLATION_DONE;
-
-                            Log.i(LOG_TAG, "Firebase installation is deleted");
-
-                            // Proceed with the account deletion.
-                            onOperation();
-                        });
-                        return;
-
-                    } catch (Exception exception) {
-                        // Exceptions can be raised because we cannot trust FCM.
-                        Log.w(LOG_TAG, "Firebase exception: " + exception.getMessage());
-
+                    mPushTokenManager.deleteInstallation((errorCode) -> {
+                        if (DEBUG) {
+                            Log.d(LOG_TAG, "Firebase installation deleted, result: " + errorCode);
+                        }
                         mState |= DELETE_FIREBASE_INSTALLATION_DONE;
-                    }
+                        onOperation();
+                    });
                 } else {
                     mState |= DELETE_FIREBASE_INSTALLATION_DONE;
                 }

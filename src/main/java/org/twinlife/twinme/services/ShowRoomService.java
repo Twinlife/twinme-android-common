@@ -16,8 +16,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService;
 import org.twinlife.twinlife.ConversationService.TransientObjectDescriptor;
 import org.twinlife.twinlife.ImageId;
@@ -124,7 +123,7 @@ public class ShowRoomService extends AbstractTwinmeService {
         }
 
         @Override
-        public void onError(long requestId, BaseService.ErrorCode errorCode, String errorParameter) {
+        public void onError(long requestId, ErrorCode errorCode, String errorParameter) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "ConversationServiceObserver.onError: requestId=" + requestId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
             }

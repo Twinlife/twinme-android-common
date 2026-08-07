@@ -14,7 +14,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Space;
 import org.twinlife.twinme.ui.TwinmeActivity;
@@ -74,7 +74,7 @@ public class SecretSpaceService extends AbstractTwinmeService {
 
         TwinmeContext.Predicate<Space> filter = (Space space) -> (name.equals(space.getName()));
 
-        mTwinmeContext.findSpaces(filter, (BaseService.ErrorCode errorCode, List<Space> spaces) -> {
+        mTwinmeContext.findSpaces(filter, (ErrorCode errorCode, List<Space> spaces) -> {
             runOnGetSpaces(mObserver, spaces);
             onOperation();
         });

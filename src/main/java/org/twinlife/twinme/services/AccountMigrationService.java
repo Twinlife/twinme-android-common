@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020-2024 twinlife SA.
+ *  Copyright (c) 2020-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -25,7 +25,7 @@ import org.twinlife.twinlife.AccountMigrationService.State;
 import org.twinlife.twinlife.AccountMigrationService.Status;
 import org.twinlife.twinlife.AssertPoint;
 import org.twinlife.twinlife.BaseService;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConnectionStatus;
 import org.twinlife.twinlife.JobService;
 import org.twinlife.twinlife.RepositoryService;
@@ -465,6 +465,7 @@ public class AccountMigrationService extends Service {
             Log.d(LOG_TAG, "onActionAcceptMigration intent=" + intent);
         }
 
+        mNotificationId = mNotificationCenter.startMigrationService(this, true);
         mAcceptAny = true;
     }
 
@@ -472,6 +473,8 @@ public class AccountMigrationService extends Service {
         if (DEBUG) {
             Log.d(LOG_TAG, "onActionOutgoingMigration intent=" + intent);
         }
+
+        mNotificationId = mNotificationCenter.startMigrationService(this, true);
 
         UUID accountMigrationId = Utils.UUIDFromString(intent.getStringExtra(PARAM_ACCOUNT_MIGRATION_ID));
         if (accountMigrationId == null || accountMigrationId.equals(mIncomingAccountMigrationId)) {
@@ -491,6 +494,7 @@ public class AccountMigrationService extends Service {
             Log.d(LOG_TAG, "onActionStartMigration intent=" + intent);
         }
 
+        mNotificationId = mNotificationCenter.startMigrationService(this, true);
         if (mAccountMigration == null) {
 
             return;
@@ -506,6 +510,7 @@ public class AccountMigrationService extends Service {
             Log.d(LOG_TAG, "onActionCancelMigration intent=" + intent);
         }
 
+        mNotificationId = mNotificationCenter.startMigrationService(this, true);
         mWork |= CANCEL_MIGRATION | DELETE_MIGRATION | STOP_SERVICE;
         mWork &= ~(OUTGOING_MIGRATION | ACCEPT_MIGRATION);
         mState &= ~(CANCEL_MIGRATION);
@@ -519,6 +524,7 @@ public class AccountMigrationService extends Service {
             Log.d(LOG_TAG, "onActionStateMigration intent=" + intent);
         }
 
+        mNotificationId = mNotificationCenter.startMigrationService(this, true);
         sendMessage(MESSAGE_STATE);
     }
 
@@ -957,6 +963,11 @@ public class AccountMigrationService extends Service {
             mState |= TERMINATE_PHASE1 | TERMINATE_PHASE1_DONE;
             mWork |= FINAL_SHUTDOWN | STOP_SERVICE;
             mTerminateRequestId = requestId;
+            // If we received a TERMINATE_MIGRATION IQ with commit and not done, we are not the initiator.
+            // Make sure to invalidate that flag in case the user tapped "Start migration" on both devices.
+            if (commit) {
+                mInitiator = false;
+            }
 
         } else if (operation == null && !mInitiator) {
             mState |= TERMINATE_PHASE2 | TERMINATE_PHASE2_DONE;

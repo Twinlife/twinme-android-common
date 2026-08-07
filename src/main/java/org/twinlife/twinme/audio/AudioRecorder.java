@@ -33,7 +33,6 @@ import androidx.media3.transformer.ExportResult;
 import androidx.media3.transformer.TransformationRequest;
 import androidx.media3.transformer.Transformer;
 
-import org.twinlife.twinlife.BaseService;
 import org.twinlife.twinlife.util.Utils;
 
 import java.io.File;
@@ -59,12 +58,12 @@ public class AudioRecorder {
         IO_ERROR,
         MEDIA_PLAYER_ERROR;
 
-        private static final Map<BaseService.ErrorCode, ErrorCode> ERROR_CODES_MAPPING = Map.of(
-                BaseService.ErrorCode.NO_STORAGE_SPACE, ErrorCode.NO_STORAGE_SPACE,
-                BaseService.ErrorCode.FILE_NOT_FOUND, ErrorCode.EMPTY_FILE,
-                BaseService.ErrorCode.NO_PERMISSION, ErrorCode.IO_ERROR);
+        private static final Map<org.twinlife.twinlife.ErrorCode, ErrorCode> ERROR_CODES_MAPPING = Map.of(
+                org.twinlife.twinlife.ErrorCode.NO_STORAGE_SPACE, ErrorCode.NO_STORAGE_SPACE,
+                org.twinlife.twinlife.ErrorCode.FILE_NOT_FOUND, ErrorCode.EMPTY_FILE,
+                org.twinlife.twinlife.ErrorCode.NO_PERMISSION, ErrorCode.IO_ERROR);
 
-        public static ErrorCode fromBaseServiceErrorCode(@NonNull BaseService.ErrorCode errorCode) {
+        public static ErrorCode fromBaseServiceErrorCode(@NonNull org.twinlife.twinlife.ErrorCode errorCode) {
             ErrorCode mapping = ERROR_CODES_MAPPING.get(errorCode);
             return mapping != null ? mapping : ErrorCode.IO_ERROR;
         }
@@ -486,8 +485,8 @@ public class AudioRecorder {
             try {
                 mOutput = File.createTempFile("rec", ".mp4", mContext.getCacheDir());
                 if (!segment.renameTo(mOutput)) {
-                    BaseService.ErrorCode errorCode = Utils.copyFile(segment, mOutput);
-                    if (errorCode != BaseService.ErrorCode.SUCCESS) {
+                    org.twinlife.twinlife.ErrorCode errorCode = Utils.copyFile(segment, mOutput);
+                    if (errorCode != org.twinlife.twinlife.ErrorCode.SUCCESS) {
                         handleError(ErrorCode.fromBaseServiceErrorCode(errorCode), new Exception("Utils.copyFile() failed"));
                         mMainThreadHandler.post(() -> mListener.onRecordingReady(null));
                         return;

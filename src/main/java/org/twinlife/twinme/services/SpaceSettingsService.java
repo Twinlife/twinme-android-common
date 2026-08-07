@@ -14,7 +14,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.SpaceSettings;
 import org.twinlife.twinme.ui.TwinmeActivity;
@@ -63,7 +63,7 @@ public class SpaceSettingsService extends AbstractTwinmeService {
         }
         showProgressIndicator();
 
-        mTwinmeContext.saveDefaultSpaceSettings(spaceSettings, (BaseService.ErrorCode status, SpaceSettings settings) -> runOnUiThread(() -> {
+        mTwinmeContext.saveDefaultSpaceSettings(spaceSettings, (ErrorCode status, SpaceSettings settings) -> runOnUiThread(() -> {
             if (mObserver != null && settings != null) {
                 mObserver.onUpdateDefaultSpaceSettings(settings);
             }

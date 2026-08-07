@@ -26,7 +26,7 @@ android {
         testInstrumentationRunnerArguments["runnerBuilder"] = "de.mannodermaus.junit5.AndroidJUnit5Builder"
     }
 
-    flavorDimensions = ["product", "tier"]
+    flavorDimensions = ["product", "tier", "distribution"]
 
     productFlavors {
         twinme {
@@ -46,6 +46,20 @@ android {
             dimension "tier"
             buildConfigField 'boolean', 'IS_PLUS', 'true'
         }
+
+        google {
+            dimension "distribution"
+            buildConfigField 'boolean', 'IS_GOOGLE', 'true'
+        }
+        huawei {
+            dimension "distribution"
+            buildConfigField 'boolean', 'IS_HUAWEI', 'true'
+        }
+        universal {
+            dimension "distribution"
+            buildConfigField 'boolean', 'IS_GOOGLE', 'true'
+            buildConfigField 'boolean', 'IS_HUAWEI', 'true'
+        }
     }
 
     buildTypes {
@@ -62,6 +76,17 @@ android {
         main {
             manifest.srcFile 'src/android/AndroidManifest.xml'
             java.srcDirs = ['src/main/java', 'src/android/java']
+        }
+
+        google {
+            java.srcDirs += 'src/google-only/java'
+        }
+        huawei {
+            java.srcDirs += 'src/huawei-only/java'
+        }
+
+        universal {
+            java.srcDirs = ['src/google/java', 'src/huawei/java', 'src/universal/java']
         }
     }
 
@@ -110,11 +135,22 @@ dependencies {
     implementation libs.zip4j
     implementation libs.glide
 
-    implementation(libs.firebase.messaging) {
+    skredImplementation libs.play.services.location
+
+    googleImplementation(libs.firebase.messaging) {
         exclude group: 'com.google.firebase', module: 'firebase-core'
         exclude group: 'com.google.firebase', module: 'firebase-analytics'
         exclude group: 'com.google.firebase', module: 'firebase-measurement-connector'
     }
+
+    universalImplementation(libs.firebase.messaging) {
+        exclude group: 'com.google.firebase', module: 'firebase-core'
+        exclude group: 'com.google.firebase', module: 'firebase-analytics'
+        exclude group: 'com.google.firebase', module: 'firebase-measurement-connector'
+    }
+
+    huaweiImplementation libs.huawei.push
+    universalImplementation libs.huawei.push
 
     skredImplementation libs.play.services.location
 

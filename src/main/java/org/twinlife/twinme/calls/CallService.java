@@ -35,7 +35,7 @@ import androidx.annotation.Nullable;
 import androidx.core.app.NotificationManagerCompat;
 
 import org.twinlife.twinlife.BaseService;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.BuildConfig;
 import org.twinlife.twinlife.ConnectionStatus;
 import org.twinlife.twinlife.AssertPoint;
@@ -3358,6 +3358,8 @@ public class CallService extends Service implements PeerConnectionService.PeerCo
         }
 
         mExecutor.execute(() -> {
+            // Make sure to release the last resources used by the call (such as the local renderer).
+            call.release();
             stopRingtone();
             if (!call.isConnected() || terminateReason == TerminateReason.TRANSFER_DONE) {
                 finish();

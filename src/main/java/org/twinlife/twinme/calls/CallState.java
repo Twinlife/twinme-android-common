@@ -13,7 +13,7 @@ package org.twinlife.twinme.calls;
 
 import static org.twinlife.twinme.calls.CallService.MESSAGE_CAMERA_SWITCH;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService.Descriptor;
 import org.twinlife.twinlife.conversation.ConversationHandler;
 import org.twinlife.twinlife.conversation.DescriptorFactory;
@@ -1620,8 +1620,6 @@ public final class CallState extends DescriptorFactory {
             Log.d(LOG_TAG, "release");
         }
 
-        ThreadUtils.checkIsOnMainThread();
-
         stopStreaming(false);
 
         // Release the remote renderer for each peer connection.
@@ -1642,13 +1640,17 @@ public final class CallState extends DescriptorFactory {
         mPendingChangeStateConnectionId = null;
         mTransferToMemberId = null;
         transferDirection = null;
-        if (mLocalRenderer != null) {
-            ViewParent viewParent = mLocalRenderer.getParent();
-            if (viewParent != null) {
-                ((ViewGroup) viewParent).removeView(mLocalRenderer);
-            }
-            mLocalRenderer.release();
+
+        final SurfaceViewRenderer localRenderer = mLocalRenderer;
+        if (localRenderer != null) {
             mLocalRenderer = null;
+            mHandler.post(() -> {
+                ViewParent viewParent = localRenderer.getParent();
+                if (viewParent != null) {
+                    ((ViewGroup) viewParent).removeView(localRenderer);
+                }
+                localRenderer.release();
+            });
         }
     }
 

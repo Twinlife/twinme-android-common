@@ -20,7 +20,7 @@ import android.view.ViewParent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService.GeolocationDescriptor;
 import org.twinlife.twinme.calls.streaming.StreamPlayer;
 import org.twinlife.twinme.calls.streaming.StreamingStatus;

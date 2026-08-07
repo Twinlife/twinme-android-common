@@ -51,10 +51,7 @@ import androidx.core.graphics.drawable.IconCompat;
 import androidx.core.text.TextUtilsCompat;
 import androidx.exifinterface.media.ExifInterface;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-
-import org.twinlife.twinlife.BaseService;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.Twinlife;
 import org.twinlife.twinlife.util.Logger;
 import org.twinlife.twinme.models.GroupMember;
@@ -243,7 +240,7 @@ public class CommonUtils {
      * @return SUCCESS if the copy succeeded or an error code.
      */
     @NonNull
-    public static BaseService.ErrorCode copyUriToFile(@NonNull ContentResolver resolver, @NonNull Uri path, @NonNull File toPath) {
+    public static ErrorCode copyUriToFile(@NonNull ContentResolver resolver, @NonNull Uri path, @NonNull File toPath) {
 
         return org.twinlife.twinlife.util.Utils.copyUriToFile(resolver, path, toPath);
     }
@@ -1161,11 +1158,6 @@ public class CommonUtils {
             }
         }
         return spannableStringBuilder;
-    }
-
-    public static boolean isGooglePlayServicesAvailable(Context context) {
-
-        return GoogleApiAvailability.getInstance().isGooglePlayServicesAvailable(context) == ConnectionResult.SUCCESS;
     }
 
     public static boolean isRotationLocked(Context context) {

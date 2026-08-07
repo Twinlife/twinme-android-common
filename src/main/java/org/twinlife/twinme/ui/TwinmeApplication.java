@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2014-2025 twinlife SA.
+ *  Copyright (c) 2014-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -19,10 +19,12 @@ import android.net.Uri;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
 import org.twinlife.twinlife.ConnectionStatus;
 import org.twinlife.twinlife.DisplayCallsMode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.JobService;
+import org.twinlife.twinlife.PeerConnectionService;
+import org.twinlife.twinlife.ShareInvitationMode;
 import org.twinlife.twinme.NotificationCenter;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Profile;
@@ -110,13 +112,14 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
         BACKUP,
         RESTORE,
         VERIFY_BACKUP,
-        BACKUP_BETA
+        BACKUP_BETA,
+        SHARE_CONTACT
     }
 
     @NonNull
-    String errorToString(BaseService.ErrorCode errorCode);
+    String errorToString(ErrorCode errorCode);
 
-    void onError(@NonNull Activity activity, BaseService.ErrorCode errorCode, @Nullable String message, @Nullable Runnable errorCallback);
+    void onError(@NonNull Activity activity, ErrorCode errorCode, @Nullable String message, @Nullable Runnable errorCallback);
 
     //
     // Personalization management
@@ -127,6 +130,10 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     void hideWelcomeScreen();
 
     void restoreWelcomeScreen();
+
+    boolean askPostNotifications();
+
+    void setAskPostNotifications(boolean value);
 
     default void setFirstInstallation(){
         //NOOP, implemented in Twinme
@@ -180,6 +187,8 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     void updateHapticFeedbackMode(HapticFeedbackMode hapticFeedbackMode);
 
     boolean hapticFeedbackModeEnable();
+
+    boolean soundEffectsEnable();
 
     int defaultTab();
 
@@ -268,6 +277,13 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     default void setAppBackgroundDate(Date date){
         //NOOP, implemented in Twinme+
     }
+
+    @NonNull
+    PeerConnectionService.IceTransportMode getIceTransportMode();
+
+    void setIceTransportMode(@NonNull PeerConnectionService.IceTransportMode iceTransportMode);
+
+    void setShareInvitationMode(@NonNull ShareInvitationMode shareInvitationMode);
 
     //
     //  Call Management

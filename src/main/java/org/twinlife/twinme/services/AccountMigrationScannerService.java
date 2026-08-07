@@ -18,7 +18,7 @@ import androidx.annotation.Nullable;
 import org.twinlife.twinlife.AccountMigrationService;
 import org.twinlife.twinlife.AccountMigrationService.State;
 import org.twinlife.twinlife.AccountMigrationService.Status;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.RepositoryService;
 import org.twinlife.twinlife.TwincodeOutboundService;
 import org.twinlife.twinlife.TwincodeOutbound;

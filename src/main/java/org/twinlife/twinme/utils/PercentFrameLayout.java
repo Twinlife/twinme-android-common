@@ -40,10 +40,14 @@ public class PercentFrameLayout extends ViewGroup {
     }
 
     public void setPosition(int xPercent, int yPercent, int widthPercent, int heightPercent) {
-        this.xPercent = xPercent;
-        this.yPercent = yPercent;
-        this.widthPercent = widthPercent;
-        this.heightPercent = heightPercent;
+        // If something changed, update and trigger the request layout.
+        if (this.xPercent != xPercent || this.yPercent != yPercent || this.widthPercent != widthPercent || this.heightPercent != heightPercent) {
+            this.xPercent = xPercent;
+            this.yPercent = yPercent;
+            this.widthPercent = widthPercent;
+            this.heightPercent = heightPercent;
+            requestLayout();
+        }
     }
 
     @Override

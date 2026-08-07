@@ -17,8 +17,7 @@ import android.util.Pair;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.Consumer;
 import org.twinlife.twinlife.ConversationService;
 import org.twinlife.twinlife.ConversationService.Descriptor;
@@ -303,7 +302,7 @@ public class ChatService extends AbstractTwinmeService {
         }
 
         @Override
-        public void onError(long requestId, BaseService.ErrorCode errorCode, String errorParameter) {
+        public void onError(long requestId, ErrorCode errorCode, String errorParameter) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "ConversationServiceObserver.onError: requestId=" + requestId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
             }

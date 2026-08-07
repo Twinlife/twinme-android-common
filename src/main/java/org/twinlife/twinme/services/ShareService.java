@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019-2025 twinlife SA.
+ *  Copyright (c) 2019-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -17,7 +17,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService;
 import org.twinlife.twinlife.ConversationService.DescriptorId;
 import org.twinlife.twinlife.ConversationService.Conversation;
@@ -590,6 +590,11 @@ public class ShareService extends AbstractTwinmeService {
         if (errorCode == ErrorCode.TWINLIFE_OFFLINE) {
             mRestarted = true;
 
+            return;
+        }
+
+        // pushMessage() reports ITEM_NOT_FOUND if the conversation or the reply-to does not exist, we can ignore.
+        if (operationId == PUSH_OBJECT && errorCode == ErrorCode.ITEM_NOT_FOUND) {
             return;
         }
 

@@ -116,4 +116,5 @@ public class Intents {
     public static final String INTENT_BACKUP_VERIFY_MODE = "org.twinlife.device.android.twinme.BackupVerifyMode";
     public static final String INTENT_PROXY = "org.twinlife.device.android.twinme.Proxy";
     public static final String INTENT_POLL_INFO = "org.twinlife.device.android.twinme.PollInfo";
+    public static final String INTENT_SHARE_CONTACT_ID = "org.twinlife.device.android.twinme.ShareContactId";
 }

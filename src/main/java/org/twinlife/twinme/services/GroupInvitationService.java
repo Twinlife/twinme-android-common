@@ -15,7 +15,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService.ErrorCode;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinlife.ConversationService;
 import org.twinlife.twinlife.ConversationService.DescriptorId;
 import org.twinlife.twinlife.ConversationService.GroupConversation;
@@ -31,6 +31,8 @@ import org.twinlife.twinme.models.Group;
 import org.twinlife.twinme.models.Space;
 import org.twinlife.twinme.ui.TwinmeActivity;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -60,6 +62,8 @@ public class GroupInvitationService extends AbstractTwinmeService {
     private static final int SET_CURRENT_SPACE_DONE = 1 << 19;
     private static final int MOVE_GROUP_SPACE = 1 << 20;
     private static final int MOVE_GROUP_SPACE_DONE = 1 << 21;
+    private static final int GET_SPACES = 1 << 22;
+    private static final int GET_SPACES_DONE = 1 << 23;
 
     public interface Observer extends AbstractTwinmeService.Observer, ContactObserver, SpaceObserver {
 
@@ -180,6 +184,7 @@ public class GroupInvitationService extends AbstractTwinmeService {
     private ImageId mAvatarId;
     @Nullable
     private UUID mSpaceId;
+    private final List<Space> mSpaces = new ArrayList<>();
 
     public GroupInvitationService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext,
                                   @NonNull Observer observer, @NonNull DescriptorId invitationId, @NonNull UUID contactId) {
@@ -251,6 +256,25 @@ public class GroupInvitationService extends AbstractTwinmeService {
         mState &= ~(GET_SPACE | GET_SPACE_DONE);
         showProgressIndicator();
         startOperation();
+    }
+
+    public int numberSpaces(boolean countSecretSpace) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "numberSpaces: " + countSecretSpace);
+        }
+
+        if (countSecretSpace) {
+            return mSpaces.size();
+        }
+
+        int count = 0;
+        for (Space space : mSpaces) {
+            if (!space.getSpaceSettings().isSecret()) {
+                count++;
+            }
+        }
+
+        return count;
     }
 
     /**
@@ -473,6 +497,27 @@ public class GroupInvitationService extends AbstractTwinmeService {
 
         if (!mIsTwinlifeReady) {
 
+            return;
+        }
+
+        //
+        // Step 1: get spaces.
+        //
+
+        if ((mState & GET_SPACES) == 0) {
+            mState |= GET_SPACES;
+
+            mTwinmeContext.findSpaces((Space space) -> true, (ErrorCode errorCode, List<Space> spaces) -> {
+                mSpaces.clear();
+                if (spaces != null) {
+                    mSpaces.addAll(spaces);
+                }
+                mState |= GET_SPACES_DONE;
+                onOperation();
+            });
+            return;
+        }
+        if ((mState & GET_SPACES_DONE) == 0) {
             return;
         }
 

@@ -13,7 +13,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.twinlife.twinlife.BaseService;
+import org.twinlife.twinlife.ErrorCode;
 import org.twinlife.twinme.TwinmeContext;
 import org.twinlife.twinme.models.Contact;
 import org.twinlife.twinme.models.Group;
@@ -59,7 +59,7 @@ public class ResetConversationService extends AbstractTwinmeService {
         }
 
         @Override
-        public void onError(long requestId, BaseService.ErrorCode errorCode, String errorParameter) {
+        public void onError(long requestId, ErrorCode errorCode, String errorParameter) {
             if (DEBUG) {
                 Log.d(LOG_TAG, "ResetConversationServiceObserver.onError: requestId=" + requestId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
             }
@@ -236,7 +236,7 @@ public class ResetConversationService extends AbstractTwinmeService {
                 }
                 org.twinlife.twinlife.ConversationService.Conversation conversation = mTwinmeContext.getConversationService().getOrCreateConversation(mContact);
                 if (conversation == null) {
-                    onError(GET_OR_CREATE_CONVERSATION, BaseService.ErrorCode.ITEM_NOT_FOUND, null);
+                    onError(GET_OR_CREATE_CONVERSATION, ErrorCode.ITEM_NOT_FOUND, null);
                     return;
                 }
                 onGetOrCreateConversation(conversation);
@@ -264,7 +264,7 @@ public class ResetConversationService extends AbstractTwinmeService {
         mTwinmeContext.getConversationService().addServiceObserver(mResetConversationServiceObserver);
     }
 
-    private void onGetContact(@NonNull BaseService.ErrorCode errorCode, @Nullable Contact contact) {
+    private void onGetContact(@NonNull ErrorCode errorCode, @Nullable Contact contact) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onGetContact contact=" + contact);
         }
@@ -292,7 +292,7 @@ public class ResetConversationService extends AbstractTwinmeService {
         onOperation();
     }
 
-    private void onGetGroup(@NonNull BaseService.ErrorCode errorCode, @Nullable Group group) {
+    private void onGetGroup(@NonNull ErrorCode errorCode, @Nullable Group group) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onGetGroup group=" + group);
         }
@@ -346,19 +346,19 @@ public class ResetConversationService extends AbstractTwinmeService {
     }
 
     @Override
-    protected void onError(int operationId, BaseService.ErrorCode errorCode, @Nullable String errorParameter) {
+    protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
         }
 
         // Wait for reconnection
-        if (errorCode == BaseService.ErrorCode.TWINLIFE_OFFLINE) {
+        if (errorCode == ErrorCode.TWINLIFE_OFFLINE) {
             mRestarted = true;
 
             return;
         }
 
-        if (errorCode == BaseService.ErrorCode.ITEM_NOT_FOUND) {
+        if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
             switch (operationId) {
                 case GET_CONTACT:
                 case GET_GROUP:
@@ -378,7 +378,7 @@ public class ResetConversationService extends AbstractTwinmeService {
                     break;
             }
         }
-        if (errorCode == BaseService.ErrorCode.NO_STORAGE_SPACE) {
+        if (errorCode == ErrorCode.NO_STORAGE_SPACE) {
 
             return;
         }
