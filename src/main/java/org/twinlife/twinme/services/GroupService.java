@@ -30,6 +30,8 @@ import org.twinlife.twinlife.ImageId;
 import org.twinlife.twinlife.ImageService;
 import org.twinlife.twinlife.Permission;
 import org.twinlife.twinlife.RepositoryObject;
+import org.twinlife.twinlife.RosterId;
+import org.twinlife.twinlife.TwincodeOutbound;
 import org.twinlife.twinlife.util.EventMonitor;
 import org.twinlife.twinlife.util.Utils;
 import org.twinlife.twinme.TwinmeContext;
@@ -77,7 +79,8 @@ public class GroupService extends AbstractTwinmeService {
 
     private static final int CREATE_INVITATION = 1 << 19;
     private static final int CREATE_INVITATION_DONE = 1 << 20;
-
+    private static final int UPDATE_PERMISSION = 1 << 21;
+    private static final int UPDATE_PERMISSION_DONE = 1 << 22;
     private static final int GET_SPACE = 1 << 23;
     private static final int GET_SPACE_DONE = 1 << 24;
 
@@ -138,12 +141,16 @@ public class GroupService extends AbstractTwinmeService {
                 Log.d(LOG_TAG, "TwinmeContextObserver.onUpdateGroup: requestId=" + requestId + " group=" + group);
             }
 
-            if (getOperation(requestId) == null) {
-
+            Integer operation = getOperation(requestId);
+            if (operation == null) {
                 return;
             }
 
-            GroupService.this.onUpdateGroup(group);
+            if (operation == UPDATE_GROUP) {
+                GroupService.this.onUpdateGroup(group);
+            } else {
+                GroupService.this.onUpdateGroupPermission(group);
+            }
         }
 
         @Override
@@ -281,7 +288,7 @@ public class GroupService extends AbstractTwinmeService {
     private String mGroupDescription;
     @Nullable
     private Capabilities mGroupCapabilities;
-    private List<Permission> mJoinPermissions;
+    private Permission mJoinPermissions;
     private Group mGroup;
     private ImageId mAvatarId;
     private Bitmap mAvatar;
@@ -296,6 +303,8 @@ public class GroupService extends AbstractTwinmeService {
     private Space mSpace;
     @Nullable
     private UUID mLeaveMemberTwincodeId;
+    @Nullable
+    private Permission mMemberPermissions;
 
     public GroupService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
@@ -386,10 +395,10 @@ public class GroupService extends AbstractTwinmeService {
      * @param avatar      the group picture.
      * @param avatarFile  the path of the group picture.
      * @param members     the list of members to invite.
-     * @param permissions the default join permission for members.
+     * @param joinPermissions the default join permission for members.
      */
     public void createGroup(String name, @Nullable String description, Bitmap avatar, File avatarFile, List<Contact> members,
-                            @Nullable List<Permission> permissions) {
+                            @NonNull Permission joinPermissions) {
         if (DEBUG) {
             Log.d(LOG_TAG, "createGroup: name=" + name + " avatarFile=" + avatarFile);
         }
@@ -402,7 +411,8 @@ public class GroupService extends AbstractTwinmeService {
         mGroupDescription = description;
         mAvatar = avatar;
         mAvatarFile = avatarFile;
-        mJoinPermissions = permissions;
+        mJoinPermissions = joinPermissions;
+        mMemberPermissions = new Permission(joinPermissions, Permission.ADMIN_PERMISSIONS);
         inviteContacts(members);
     }
 
@@ -428,11 +438,11 @@ public class GroupService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "updateGroup: groupName=" + groupName);
         }
 
-        updateGroup(groupName, groupDescription, null, null, null, null);
+        updateGroup(groupName, groupDescription, null, null, null);
     }
 
     public void updateGroup(@NonNull String groupName, @Nullable String groupDescription, @Nullable Bitmap groupAvatar, @Nullable File groupAvatarFile,
-                            @Nullable List<Permission> permissions, @Nullable Capabilities groupCapabilities) {
+                            @Nullable Capabilities groupCapabilities) {
         if (DEBUG) {
             Log.d(LOG_TAG, "updateGroup: groupName=" + groupName + " groupAvatarFile=" + groupAvatarFile);
         }
@@ -445,9 +455,6 @@ public class GroupService extends AbstractTwinmeService {
         mWork |= UPDATE_GROUP;
         mState &= ~(UPDATE_GROUP | UPDATE_GROUP_DONE);
         showProgressIndicator();
-        if(permissions != null) {
-            mTwinmeContext.execute(() -> mConversationService.setPermissions(mGroup, null, permissions));
-        }
         startOperation();
     }
 
@@ -466,12 +473,16 @@ public class GroupService extends AbstractTwinmeService {
         startOperation();
     }
 
-    public void updateGroupPermissions(@Nullable List<Permission> permissions) {
+    public void updateGroupPermissions(@NonNull Permission memberPermissions) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "updateGroupPermissions: " + permissions);
+            Log.d(LOG_TAG, "updateGroupPermissions: " + memberPermissions);
         }
 
-        mTwinmeContext.execute(() -> mConversationService.setPermissions(mGroup, null, permissions));
+        mMemberPermissions = memberPermissions;
+        mWork |= UPDATE_PERMISSION;
+        mState &= ~(UPDATE_PERMISSION | UPDATE_PERMISSION_DONE);
+        showProgressIndicator();
+        startOperation();
     }
 
     /**
@@ -660,7 +671,7 @@ public class GroupService extends AbstractTwinmeService {
         mGroup = group;
         mGroupId = group.getId();
         mGroupConversation = conversation;
-        mConversationService.setPermissions(mGroup, null, mJoinPermissions);
+        // mConversationService.setPermissions(mGroup, null, mJoinPermissions);
         nextInviteMember();
         onOperation();
     }
@@ -738,6 +749,23 @@ public class GroupService extends AbstractTwinmeService {
         }
 
         mState |= UPDATE_GROUP_DONE;
+
+        mGroup = group;
+        runOnUiThread(() -> {
+            if (mObserver != null) {
+                mObserver.onUpdateGroup(group, mAvatar);
+            }
+        });
+
+        onOperation();
+    }
+
+    private void onUpdateGroupPermission(@NonNull Group group) {
+        if (DEBUG) {
+            Log.d(LOG_TAG, "onUpdateGroupPermission: group=" + group);
+        }
+
+        mState |= UPDATE_PERMISSION_DONE;
 
         mGroup = group;
         runOnUiThread(() -> {
@@ -974,7 +1002,7 @@ public class GroupService extends AbstractTwinmeService {
                 mState |= CREATE_GROUP;
                 long requestId = newOperation(CREATE_GROUP);
 
-                mTwinmeContext.createGroup(requestId, mGroupName, mGroupDescription, mAvatar, mAvatarFile);
+                mTwinmeContext.createGroup(requestId, mGroupName, mGroupDescription, mAvatar, mAvatarFile, mMemberPermissions, mJoinPermissions);
                 return;
             }
             if ((mState & CREATE_GROUP_DONE) == 0) {
@@ -1079,6 +1107,19 @@ public class GroupService extends AbstractTwinmeService {
             }
         }
 
+        if ((mWork & UPDATE_PERMISSION) != 0 && mMemberPermissions != null && mGroup != null) {
+            if ((mState & UPDATE_PERMISSION) == 0) {
+                mState |= UPDATE_PERMISSION;
+                long requestId = newOperation(UPDATE_PERMISSION);
+                mTwinmeContext.updateGroupPermissions(requestId, mGroup, mMemberPermissions);
+                return;
+            }
+            if ((mState & UPDATE_PERMISSION_DONE) == 0) {
+                return;
+            }
+            mWork &= ~UPDATE_PERMISSION;
+        }
+
         // Nothing more to do, we can hide the progress indicator.
         hideProgressIndicator();
     }
@@ -1115,6 +1156,10 @@ public class GroupService extends AbstractTwinmeService {
 
                     hideProgressIndicator();
                     runOnGetContactNotFound(mObserver);
+                    return;
+
+                case UPDATE_PERMISSION:
+                    mState |= UPDATE_PERMISSION_DONE;
                     return;
 
                 default:

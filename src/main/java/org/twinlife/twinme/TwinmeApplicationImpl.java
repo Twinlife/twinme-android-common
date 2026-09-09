@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import org.twinlife.twinlife.AndroidConfigurationServiceImpl;
+import org.twinlife.twinlife.ConfigurationService;
 import org.twinlife.twinlife.ConnectionStatus;
 import org.twinlife.twinlife.JobService;
 import org.twinlife.twinlife.TwinlifeContextImpl;
@@ -100,8 +101,10 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
      * It is executed BEFORE the twinlife library is configured.  This allows to do some specific
      * setup before the twinlife library is configured and without blocking the current thread.
      * @param setup the setup to execute with the twinme context.
+     * @return the configuration service used by twinlife.
      */
-    public void initialize(@NonNull TwinmeContext.Consumer<TwinmeContext> setup) {
+    @NonNull
+    public ConfigurationService initialize(@NonNull TwinmeContext.Consumer<TwinmeContext> setup) {
         if (DEBUG) {
             Log.d(LOG_TAG, "initialize");
         }
@@ -118,6 +121,7 @@ public abstract class TwinmeApplicationImpl extends Application implements Twinm
 
         mTwinlifeServiceConnectionImpl = new TwinlifeServiceConnectionImpl((TwinlifeContextImpl) mTwinmeContext, this, configurationService);
         mTwinlifeServiceConnectionImpl.start();
+        return configurationService;
     }
 
     //

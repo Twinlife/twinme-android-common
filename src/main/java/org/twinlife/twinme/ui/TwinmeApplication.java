@@ -86,12 +86,6 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
         NOTIFICATIONS
     }
 
-    enum HapticFeedbackMode {
-        SYSTEM,
-        ON,
-        OFF
-    }
-
     enum QualityMedia {
         STANDARD,
         ORIGINAL
@@ -181,10 +175,6 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
     int displayMode();
 
     void updateDisplayMode(DisplayMode displayMode);
-
-    int hapticFeedbackMode();
-
-    void updateHapticFeedbackMode(HapticFeedbackMode hapticFeedbackMode);
 
     boolean hapticFeedbackModeEnable();
 

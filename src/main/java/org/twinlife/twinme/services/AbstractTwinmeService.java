@@ -646,7 +646,7 @@ public class AbstractTwinmeService {
             byte[] avatarBytes = contactShareDescriptor.loadAvatarData(mTwinmeContext.getFilesDir());
 
             if (avatarBytes == null) {
-                uiConsumer.accept(null);
+                runOnUiThread(() -> uiConsumer.accept(null));
             } else {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(avatarBytes, 0, avatarBytes.length);
 
