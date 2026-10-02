@@ -313,7 +313,7 @@ public class ConversationFilesService extends AbstractTwinmeService {
             if ((mState & GET_OR_CREATE_CONVERSATION) == 0) {
                 mState |= GET_OR_CREATE_CONVERSATION;
 
-                mTwinmeContext.assertNotNull(ServiceAssertPoint.NULL_SUBJECT, mContact, 319);
+                mTwinmeContext.assertNotNull(ServiceAssertPoint.NULL_SUBJECT, mContact, 316);
 
                 if (DEBUG) {
                     Log.d(LOG_TAG, "ConversationFilesService.getConversation: twincodeOutboundId=" + mTwincodeOutboundId + " peerTwincodeOutboundId=" +
@@ -335,7 +335,7 @@ public class ConversationFilesService extends AbstractTwinmeService {
         // Step 3
         //
         if ((mDescriptorIds != null && (mState & GET_DESCRIPTORS) == 0)) {
-            mState |= GET_DESCRIPTORS;
+            mState |= GET_DESCRIPTORS | GET_DESCRIPTORS_DONE;
 
             String[] descriptorIds = mDescriptorIds.split(",");
             final List<Descriptor> descriptors = new ArrayList<>();
@@ -426,7 +426,7 @@ public class ConversationFilesService extends AbstractTwinmeService {
 
     private void onGetGroup(@NonNull ErrorCode errorCode, @Nullable Group group) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onGetProfileGroup group=" + group);
+            Log.d(LOG_TAG, "onGetGroup: errorCode=" + errorCode + " group=" + group);
         }
 
         mState |= GET_GROUP_DONE;
@@ -517,8 +517,11 @@ public class ConversationFilesService extends AbstractTwinmeService {
         if (errorCode == ErrorCode.ITEM_NOT_FOUND) {
             switch (operationId) {
                 case GET_CONTACT:
-                case GET_GROUP:
                     runOnGetContactNotFound(mObserver);
+                    return;
+
+                case GET_GROUP:
+                    runOnGetGroupNotFound(mObserver);
                     return;
 
                 case MARK_DESCRIPTOR_DELETED:
@@ -543,7 +546,7 @@ public class ConversationFilesService extends AbstractTwinmeService {
 
     private void onDeleteDescriptors(@NonNull DescriptorId[] descriptorList) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onDeleteDescriptor: descriptor=" + descriptorList.length);
+            Log.d(LOG_TAG, "onDeleteDescriptors: descriptorList=" + descriptorList.length);
         }
 
         Set<DescriptorId> descriptorIdSet = new HashSet<>();

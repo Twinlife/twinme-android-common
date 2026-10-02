@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Quay lại</string>
+    <string name="application_confirm">Xác nhận</string>
+    <string name="application_later">Để sau</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Hủy</string>
+    <string name="deleted_account_view_warning">Cảnh báo‼️</string>
+    <string name="streaming_audio_view_error_message">Đã xảy ra lỗi. Vui lòng thử lại.</string>
+    <string name="edit_contact_view_message">Liên hệ này sẽ không thể liên lạc với bạn nữa.</string>
+</resources>

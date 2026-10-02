@@ -98,7 +98,7 @@ public class InvitationRoomService extends AbstractTwinmeService {
                                  @NonNull UUID roomId, @Nullable Uri invitationLink) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "GroupService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "InvitationRoomService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -307,6 +307,7 @@ public class InvitationRoomService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -319,9 +320,8 @@ public class InvitationRoomService extends AbstractTwinmeService {
         if ((mState & GET_CURRENT_SPACE) == 0) {
             mState |= GET_CURRENT_SPACE;
 
-            long requestId = newOperation(GET_CURRENT_SPACE);
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace: requestId=" + requestId);
+                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace");
             }
 
             mTwinmeContext.getCurrentSpace(this::onGetCurrentSpace);

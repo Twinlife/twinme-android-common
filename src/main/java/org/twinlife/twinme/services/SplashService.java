@@ -153,6 +153,7 @@ public class SplashService extends AbstractTwinmeService {
         super.dispose();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -243,7 +244,7 @@ public class SplashService extends AbstractTwinmeService {
 
     private void checkDatabaseUpgrade() {
         if (DEBUG) {
-            Log.d(LOG_TAG, "probUpgrade");
+            Log.d(LOG_TAG, "checkDatabaseUpgrade");
         }
 
         if (mTwinmeContext.isDatabaseUpgraded()) {

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">بازگشت</string>
+    <string name="application_confirm">تایید</string>
+    <string name="application_later">بعد</string>
+    <string name="application_ok">خوب</string>
+    <string name="application_cancel">لغو</string>
+    <string name="deleted_account_view_warning">توجه‼️</string>
+    <string name="streaming_audio_view_error_message">خطایی رخ داده است. لطفا دوباره تلاش کنید.</string>
+    <string name="edit_contact_view_message">این مخاطب دیگر نمی تواند با شما تماس بگیرد.</string>
+</resources>

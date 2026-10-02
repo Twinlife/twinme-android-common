@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">返回</string>
+    <string name="application_confirm">確認</string>
+    <string name="application_later">後來</string>
+    <string name="application_ok">確定</string>
+    <string name="application_cancel">取消</string>
+    <string name="deleted_account_view_warning">注意力！</string>
+    <string name="streaming_audio_view_error_message">發生了錯誤。請再試一次。</string>
+    <string name="edit_contact_view_message">此聯絡人將無法再聯絡您。</string>
+</resources>

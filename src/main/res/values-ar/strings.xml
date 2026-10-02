@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">عودة</string>
+    <string name="application_confirm">يتأكد</string>
+    <string name="application_later">فيما بعد</string>
+    <string name="application_ok">حسنا</string>
+    <string name="application_cancel">إلغاء</string>
+    <string name="deleted_account_view_warning">انتباه ‼️</string>
+    <string name="streaming_audio_view_error_message">حدث خطأ. يرجى المحاولة مرة أخرى.</string>
+    <string name="edit_contact_view_message">لن تتمكن جهة الاتصال هذه من الوصول إليك بعد الآن.</string>
+</resources>

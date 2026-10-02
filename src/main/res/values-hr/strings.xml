@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Natrag</string>
+    <string name="application_confirm">Potvrdi</string>
+    <string name="application_later">Kasnije</string>
+    <string name="application_ok">U redu</string>
+    <string name="application_cancel">Odustani</string>
+    <string name="deleted_account_view_warning">Upozorenje‼️</string>
+    <string name="streaming_audio_view_error_message">Došlo je do pogreške. Pokušajte ponovno.</string>
+    <string name="edit_contact_view_message">Ovaj vas kontakt više neće moći kontaktirati.</string>
+</resources>

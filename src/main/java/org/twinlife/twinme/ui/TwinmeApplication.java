@@ -157,6 +157,12 @@ public interface TwinmeApplication extends org.twinlife.twinme.TwinmeApplication
         //NOOP, implemented in Twinme
     }
 
+    int mainStyle();
+
+    String mainStyleString();
+
+    void updateMainStyle(String color);
+
     int fontSize();
 
     void updateFontSize(FontSize fontSize);

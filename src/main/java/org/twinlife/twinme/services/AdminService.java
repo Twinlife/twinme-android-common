@@ -521,7 +521,7 @@ public class AdminService {
 
     private void onUpdateScores(long requestId, @NonNull List<Contact> updatedContacts, @NonNull List<Group> updatedGroups) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "TwinmeContextObserver.onUpdateStats: requestId=" + requestId + " updatedContacts=" + updatedContacts + " updatedGroups=" + updatedGroups);
+            Log.d(LOG_TAG, "onUpdateScores: requestId=" + requestId + " updatedContacts=" + updatedContacts + " updatedGroups=" + updatedGroups);
         }
 
         SharedPreferences preferences = mApplication.getSharedPreferences(UPDATE_SCORE_PREFERENCES, Context.MODE_PRIVATE);

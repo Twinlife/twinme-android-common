@@ -205,7 +205,7 @@ public class GroupService extends AbstractTwinmeService {
         @Override
         public void onUpdateDescriptor(long requestId, @NonNull Conversation conversation, @NonNull Descriptor invitation, UpdateType updateType) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "ConversationServiceObserver.onInviteGroupUpdate: requestId=" + requestId + " conversation=" + conversation);
+                Log.d(LOG_TAG, "ConversationServiceObserver.onUpdateDescriptor: requestId=" + requestId + " conversation=" + conversation);
             }
 
             if (invitation instanceof InvitationDescriptor) {
@@ -616,7 +616,7 @@ public class GroupService extends AbstractTwinmeService {
 
     private void onGetGroup(@NonNull ErrorCode errorCode, @Nullable Group group) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onGetProfileGroup: group=" + group);
+            Log.d(LOG_TAG, "onGetGroup: errorCode=" + errorCode + " group=" + group);
         }
 
         mState |= GET_GROUP_DONE;
@@ -779,7 +779,7 @@ public class GroupService extends AbstractTwinmeService {
 
     private void onDeleteGroup(@NonNull UUID groupId) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onDeleteGroup: contactId=" + groupId);
+            Log.d(LOG_TAG, "onDeleteGroup: groupId=" + groupId);
         }
 
         if (!groupId.equals(mGroupId)) {
@@ -848,6 +848,7 @@ public class GroupService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -1030,6 +1031,7 @@ public class GroupService extends AbstractTwinmeService {
                         EventMonitor.event("Invite " + Utils.toLog(cid) + " in " + Utils.toLog(mGroup.getGroupTwincodeOutboundId()));
                         ErrorCode result = mConversationService.inviteGroup(requestId, conversation, mGroup, mGroupName);
                         if (result != ErrorCode.SUCCESS) {
+                            finishOperation(requestId);
                             onError(INVITE_GROUP_MEMBER, result, cid.toString());
                         }
                     }
@@ -1124,6 +1126,7 @@ public class GroupService extends AbstractTwinmeService {
         hideProgressIndicator();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

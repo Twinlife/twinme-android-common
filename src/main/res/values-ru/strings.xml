@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Назад</string>
+    <string name="application_confirm">Подтверждать</string>
+    <string name="application_later">Потом</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Отмена</string>
+    <string name="deleted_account_view_warning">Внимание‼️</string>
+    <string name="streaming_audio_view_error_message">Произошла ошибка. Пожалуйста, попробуйте еще раз.</string>
+    <string name="edit_contact_view_message">Этот контакт больше не сможет с вами связаться.</string>
+</resources>

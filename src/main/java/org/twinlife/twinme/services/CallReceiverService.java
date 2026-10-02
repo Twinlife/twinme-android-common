@@ -93,7 +93,7 @@ public class CallReceiverService extends AbstractTwinmeService {
 
         default void onChangeCallReceiverTwincode(@NonNull CallReceiver callReceiver) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "default Observer.onUpdateCallReceiver: callReceiver=" + callReceiver);
+                Log.d(LOG_TAG, "default Observer.onChangeCallReceiverTwincode: callReceiver=" + callReceiver);
             }
         }
 
@@ -347,7 +347,7 @@ public class CallReceiverService extends AbstractTwinmeService {
      */
     public void updateCallReceiver(@NonNull CallReceiver callReceiver, @NonNull Capabilities capabilities) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "updateCallReceiver: callReceiver=");
+            Log.d(LOG_TAG, "updateCallReceiver: callReceiver=" + callReceiver + " capabilities=" + capabilities);
         }
 
         mCallReceiver = callReceiver;
@@ -776,7 +776,7 @@ public class CallReceiverService extends AbstractTwinmeService {
 
     private void onChangeCallReceiverTwincode(@NonNull CallReceiver callReceiver) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onUpdateCallReceiver callReceiver=" + callReceiver);
+            Log.d(LOG_TAG, "onChangeCallReceiverTwincode: callReceiver=" + callReceiver);
         }
 
         mState |= CHANGE_CALL_RECEIVER_TWINCODE_DONE;

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Πίσω</string>
+    <string name="application_confirm">Επιβεβαίωση</string>
+    <string name="application_later">Αργότερα</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Ακύρωση</string>
+    <string name="deleted_account_view_warning">Προειδοποίηση‼️</string>
+    <string name="streaming_audio_view_error_message">Παρουσιάστηκε σφάλμα. Παρακαλώ δοκιμάστε ξανά.</string>
+    <string name="edit_contact_view_message">Αυτή η επαφή δεν θα μπορεί πλέον να σας προσεγγίσει.</string>
+</resources>

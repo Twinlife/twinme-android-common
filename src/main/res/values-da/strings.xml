@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Tilbage</string>
+    <string name="application_confirm">Bekræft</string>
+    <string name="application_later">Senere</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Annullér</string>
+    <string name="deleted_account_view_warning">Advare‼️</string>
+    <string name="streaming_audio_view_error_message">En fejl er opstået. Prøv venligst igen.</string>
+    <string name="edit_contact_view_message">Denne kontakt vil ikke længere kunne nå dig.</string>
+</resources>

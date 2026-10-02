@@ -235,6 +235,7 @@ public class ShowContactService extends AbstractTwinmeService {
     //
     // Private methods
     //
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

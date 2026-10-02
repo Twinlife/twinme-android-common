@@ -440,7 +440,7 @@ public class AccountMigrationService extends Service {
 
     private void onActionIncomingMigration(@NonNull Intent intent) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onIncomingMigration intent=" + intent);
+            Log.d(LOG_TAG, "onActionIncomingMigration: intent=" + intent);
         }
 
         mNotificationId = mNotificationCenter.startMigrationService(this, true);
@@ -866,7 +866,6 @@ public class AccountMigrationService extends Service {
             return;
         }
 
-        mState |= STOP_SERVICE;
         mWork |= STOP_SERVICE;
 
         // And send a new state with canceled state so that the activity is aware of the cancel.
@@ -934,7 +933,10 @@ public class AccountMigrationService extends Service {
             mWork |= DELETE_MIGRATION | STOP_SERVICE;
             return true;
 
-        } else if (state == State.TERMINATE && ((mWork & TERMINATE_PHASE1) == 0) && mInitiator) {
+        } else if (state == State.TERMINATE && ((mWork & TERMINATE_PHASE1) == 0)
+                && (mInitiator || ((mState & TERMINATE_PHASE1) == 0 && mAccountAccountMigrationService.isInitiator(accountMigrationId)))) {
+            // The initiator flag is lost when the application is restarted: also check the saved flag
+            // unless the terminate phase 1 was already received from the peer.
 
             // Start the terminate phase 1.
             mWork |= TERMINATE_PHASE1;

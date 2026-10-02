@@ -171,7 +171,7 @@ public class ProfileService extends AbstractTwinmeService {
         if (space != null && space.getProfile() != null) {
             Profile profile = space.getProfile();
             ImageId avatarId = profile.getAvatarId();
-            if (mAvatarId != avatarId) {
+            if (mAvatarId == null || !mAvatarId.equals(avatarId)) {
                 mAvatarId = avatarId;
                 mState &= ~(GET_IDENTITY_AVATAR | GET_IDENTITY_AVATAR_DONE);
             }

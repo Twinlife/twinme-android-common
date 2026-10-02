@@ -90,7 +90,7 @@ public class InvitationSubscriptionService extends AbstractTwinmeService {
                                          @NonNull Uri uri, @NonNull InvitationSubscriptionService.Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "DeleteAccountService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "InvitationSubscriptionService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -173,6 +173,7 @@ public class InvitationSubscriptionService extends AbstractTwinmeService {
         startOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

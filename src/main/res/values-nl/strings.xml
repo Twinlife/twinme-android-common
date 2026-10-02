@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Terug</string>
+    <string name="application_confirm">Bevestigen</string>
+    <string name="application_later">Later</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Annuleren</string>
+    <string name="deleted_account_view_warning">Aandacht‼️</string>
+    <string name="streaming_audio_view_error_message">Er is een fout opgetreden. Probeer het alstublieft nog een keer.</string>
+    <string name="edit_contact_view_message">Dit contact kan u niet meer bereiken.</string>
+</resources>

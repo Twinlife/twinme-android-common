@@ -162,6 +162,7 @@ public class CreateProfileService extends AbstractTwinmeService {
     // Private methods
     //
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -301,7 +302,7 @@ public class CreateProfileService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "onCreateProfile profile=" + profile);
         }
 
-        mState |= CREATE_PROFILE;
+        mState |= CREATE_PROFILE_DONE;
 
         runOnUiThread(() -> {
             if (mObserver != null) {

@@ -185,6 +185,7 @@ public class PeerService extends Service implements JobService.Observer {
         }
 
         sIsRunning = false;
+        super.onDestroy();
     }
 
     @Override

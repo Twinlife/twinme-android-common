@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Retour</string>
+    <string name="application_confirm">Confirmer</string>
+    <string name="application_later">Plus tard</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Annuler</string>
+    <string name="deleted_account_view_warning">Attention ‼️</string>
+    <string name="streaming_audio_view_error_message">Une erreur est survenue. Veuillez réessayer.</string>
+    <string name="edit_contact_view_message">Ce contact ne pourra plus vous joindre.</string>
+</resources>

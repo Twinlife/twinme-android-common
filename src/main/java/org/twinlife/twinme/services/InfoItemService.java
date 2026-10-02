@@ -126,6 +126,7 @@ public class InfoItemService extends AbstractTwinmeService {
     // Private methods
     //
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -170,7 +171,7 @@ public class InfoItemService extends AbstractTwinmeService {
                 } else {
                     // If the Group has no associated GroupConversation, it is invalid and must be removed.
                     mTwinmeContext.deleteGroup(mTwinmeContext.newRequestId(), mGroup);
-                    runOnGetContactNotFound(mObserver);
+                    runOnGetGroupNotFound(mObserver);
                 }
             } else if (mContact != null) {
 

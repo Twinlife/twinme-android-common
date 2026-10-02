@@ -144,7 +144,7 @@ public class AcceptInvitationService extends AbstractTwinmeService {
         @Override
         public void onDeleteDescriptors(long requestId, @NonNull Conversation conversation, @NonNull DescriptorId[] descriptorList) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "ConversationServiceObserver.onDeleteDescriptor: requestId=" + requestId
+                Log.d(LOG_TAG, "ConversationServiceObserver.onDeleteDescriptors: requestId=" + requestId
                         + " conversation=" + conversation + " descriptorList.length" + descriptorList.length);
             }
 
@@ -160,7 +160,7 @@ public class AcceptInvitationService extends AbstractTwinmeService {
         @Override
         public void onError(long requestId, ErrorCode errorCode, String errorParameter) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwincodeOutboundServiceObserver.onError: requestId=" + requestId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
+                Log.d(LOG_TAG, "ConversationServiceObserver.onError: requestId=" + requestId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
             }
 
             Integer operationId = getOperation(requestId);
@@ -556,9 +556,8 @@ public class AcceptInvitationService extends AbstractTwinmeService {
             if ((mState & GET_GROUP) == 0) {
                 mState |= GET_GROUP;
 
-                long requestId = newOperation(GET_GROUP);
                 if (DEBUG) {
-                    Log.d(LOG_TAG, "TwinmeContext.getGroup: requestId=" + requestId + " groupId=" + mGroupId);
+                    Log.d(LOG_TAG, "TwinmeContext.getGroup: groupId=" + mGroupId);
                 }
 
                 mTwinmeContext.getGroup(mGroupId, this::onGetGroup);

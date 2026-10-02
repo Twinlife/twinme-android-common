@@ -76,7 +76,12 @@ public class EditSpaceService extends AbstractTwinmeService {
             if (DEBUG) {
                 Log.d(LOG_TAG, "TwinmeContextObserver.onCreateSpace: requestId=" + requestId + " space=" + space);
             }
-            
+
+            if (getOperation(requestId) == null) {
+
+                return;
+            }
+
             EditSpaceService.this.onCreateSpace(space);
         }
 
@@ -206,12 +211,12 @@ public class EditSpaceService extends AbstractTwinmeService {
 
     public void setSpace(@NonNull Space space) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "setCurrentSpace: space= " + space);
+            Log.d(LOG_TAG, "setSpace: space= " + space);
         }
 
         long requestId = newOperation(SET_CURRENT_SPACE);
         if (DEBUG) {
-            Log.d(LOG_TAG, "setCurrentSpace: requestId=" + requestId + " space= " + space);
+            Log.d(LOG_TAG, "setSpace: requestId=" + requestId + " space= " + space);
         }
         showProgressIndicator();
 
@@ -421,9 +426,15 @@ public class EditSpaceService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
+        }
+
+        if (!mIsTwinlifeReady) {
+
+            return;
         }
 
         //
@@ -503,6 +514,7 @@ public class EditSpaceService extends AbstractTwinmeService {
     }
 
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

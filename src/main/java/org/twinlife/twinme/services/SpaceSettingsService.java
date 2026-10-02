@@ -23,7 +23,6 @@ public class SpaceSettingsService extends AbstractTwinmeService {
     private static final String LOG_TAG = "SpaceSettingsService";
     private static final boolean DEBUG = false;
 
-    private static final int UPDATE_DEFAULT_SPACE_SETTINGS = 1 << 20;
 
     public interface Observer extends AbstractTwinmeService.Observer {
 
@@ -37,7 +36,7 @@ public class SpaceSettingsService extends AbstractTwinmeService {
                                 @NonNull Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "EditSpaceService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "SpaceSettingsService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -57,10 +56,6 @@ public class SpaceSettingsService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "updateDefaultSpaceSettings: spaceSettings= " + spaceSettings);
         }
 
-        long requestId = newOperation(UPDATE_DEFAULT_SPACE_SETTINGS);
-        if (DEBUG) {
-            Log.d(LOG_TAG, "updateSpace: requestId=" + requestId + " spaceSettings= " + spaceSettings);
-        }
         showProgressIndicator();
 
         mTwinmeContext.saveDefaultSpaceSettings(spaceSettings, (ErrorCode status, SpaceSettings settings) -> runOnUiThread(() -> {
@@ -71,6 +66,7 @@ public class SpaceSettingsService extends AbstractTwinmeService {
         }));
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

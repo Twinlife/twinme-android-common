@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Înapoi</string>
+    <string name="application_confirm">Confirmați</string>
+    <string name="application_later">Mai târziu</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Anulați</string>
+    <string name="deleted_account_view_warning">Atenție‼️</string>
+    <string name="streaming_audio_view_error_message">A apărut o eroare. Vă rugăm să încercați din nou.</string>
+    <string name="edit_contact_view_message">Acest contact nu va mai putea să vă contacteze.</string>
+</resources>

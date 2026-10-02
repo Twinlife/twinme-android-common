@@ -328,7 +328,7 @@ public class ConversationService extends AbstractTwinmeService {
         @Override
         public void onLeaveGroup(long requestId, @NonNull GroupConversation conversation, @NonNull UUID memberTwincodeId) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContextObserver.onLeaveGroup: requestId=" + requestId
+                Log.d(LOG_TAG, "ConversationServiceObserver.onLeaveGroup: requestId=" + requestId
                         + " conversation=" + conversation + " memberTwincodeId=" + memberTwincodeId);
             }
 
@@ -673,7 +673,7 @@ public class ConversationService extends AbstractTwinmeService {
 
     public void toggleAnnotation(@NonNull DescriptorId descriptorId, AnnotationType annotationType, long value) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "setAnnotation: setAnnotation=" + descriptorId + " annotationType=" + annotationType + " value=" + value);
+            Log.d(LOG_TAG, "toggleAnnotation: descriptorId=" + descriptorId + " annotationType=" + annotationType + " value=" + value);
         }
 
         mTwinmeContext.toggleAnnotation(descriptorId, annotationType, value);
@@ -681,7 +681,7 @@ public class ConversationService extends AbstractTwinmeService {
 
     public void deleteAnnotation(@NonNull DescriptorId descriptorId, AnnotationType annotationType) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "deleteAnnotation: setAnnotation=" + descriptorId + " annotationType=" + annotationType);
+            Log.d(LOG_TAG, "deleteAnnotation: descriptorId=" + descriptorId + " annotationType=" + annotationType);
         }
 
         mTwinmeContext.deleteAnnotation(descriptorId, annotationType);
@@ -1360,7 +1360,7 @@ public class ConversationService extends AbstractTwinmeService {
 
     private void onDeleteDescriptors(@NonNull DescriptorId[] descriptorList) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onDeleteDescriptor: descriptor=" + descriptorList.length);
+            Log.d(LOG_TAG, "onDeleteDescriptors: descriptorList=" + descriptorList.length);
         }
 
         Set<DescriptorId> descriptorIdSet = new HashSet<>(Arrays.asList(descriptorList));

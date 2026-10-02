@@ -94,7 +94,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
         @Override
         public void onCreateInvitationWithCode(long requestId, @NonNull Invitation invitation) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "onCreateInvitationCode: requestId=" + requestId + " invitation=" + invitation);
+                Log.d(LOG_TAG, "TwinmeContextObserver.onCreateInvitationWithCode: requestId=" + requestId + " invitation=" + invitation);
             }
 
             InvitationCodeService.this.onCreateInvitationWithCode(invitation);
@@ -198,7 +198,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
 
     public void createInvitationWithCode(int limit, int validityPeriod) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "createInvitationCode: validityPeriod=" + validityPeriod);
+            Log.d(LOG_TAG, "createInvitationWithCode: limit=" + limit + " validityPeriod=" + validityPeriod);
         }
 
         mInvitationCodeLimit = limit;
@@ -305,9 +305,8 @@ public class InvitationCodeService extends AbstractTwinmeService {
         if ((mState & GET_CURRENT_SPACE) == 0) {
             mState |= GET_CURRENT_SPACE;
 
-            long requestId = newOperation(GET_CURRENT_SPACE);
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace: requestId=" + requestId);
+                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace");
             }
 
             mTwinmeContext.getCurrentSpace(this::onGetCurrentSpace);
@@ -374,7 +373,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
                         });
             }
 
-            if ((mState & GET_INVITATIONS_DONE) == 0) {
+            if ((mState & COUNT_VALID_INVITATIONS_DONE) == 0) {
                 return;
             }
         }
@@ -488,7 +487,7 @@ public class InvitationCodeService extends AbstractTwinmeService {
 
     private void onCreateInvitationWithCode(@NonNull Invitation invitation) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onCreateInvitationCode: invitation=" + invitation);
+            Log.d(LOG_TAG, "onCreateInvitationWithCode: invitation=" + invitation);
         }
 
         mState |= CREATE_INVITATION_CODE_DONE;

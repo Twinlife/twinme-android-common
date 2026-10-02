@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Vissza</string>
+    <string name="application_confirm">Megerősítés</string>
+    <string name="application_later">Később</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Mégse</string>
+    <string name="deleted_account_view_warning">Figyelmeztetés‼️</string>
+    <string name="streaming_audio_view_error_message">Hiba történt. Kérjük, próbálja újra.</string>
+    <string name="edit_contact_view_message">Ez a kapcsolat többé nem fog tudni elérni téged.</string>
+</resources>

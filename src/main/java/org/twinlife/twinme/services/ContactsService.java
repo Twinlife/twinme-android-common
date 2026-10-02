@@ -248,6 +248,7 @@ public class ContactsService extends AbstractTwinmeService {
         runOnDeleteContact(mObserver, contactId);
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

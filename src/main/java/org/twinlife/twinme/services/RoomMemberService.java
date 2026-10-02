@@ -149,7 +149,10 @@ public class RoomMemberService extends AbstractTwinmeService {
                 return;
             }
 
-            long operationId = getOperation(mRoomRequestId);
+            Integer operationId = getOperation(mRoomRequestId);
+            if (operationId == null) {
+                return;
+            }
 
             if (operationId == GET_ROOM_ADMIN) {
                 RoomMemberService.this.onGetRoomAdmin(result);
@@ -324,6 +327,7 @@ public class RoomMemberService extends AbstractTwinmeService {
     //
     // Private methods
     //
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -541,6 +545,8 @@ public class RoomMemberService extends AbstractTwinmeService {
             if (avatar == null && room.getAvatarId() != null) {
                 getImageFromServer(room);
             }
+        } else {
+            onError(GET_ROOM, errorCode, null);
         }
         onOperation();
     }
@@ -602,7 +608,7 @@ public class RoomMemberService extends AbstractTwinmeService {
 
     private void onGetRoomMembers(@NonNull RoomCommandResult result) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onRoomCommandResult: result=" + result);
+            Log.d(LOG_TAG, "onGetRoomMembers: result=" + result);
         }
 
         mState |= GET_ROOM_MEMBERS_DONE;
@@ -803,6 +809,7 @@ public class RoomMemberService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

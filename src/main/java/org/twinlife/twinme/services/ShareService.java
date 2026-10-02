@@ -166,7 +166,7 @@ public class ShareService extends AbstractTwinmeService {
                         @NonNull ShareService.Observer observer, @Nullable DescriptorId descriptorId) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "ContactsService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "ShareService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -208,9 +208,9 @@ public class ShareService extends AbstractTwinmeService {
         });
     }
 
-    public void pushMessage(String message, boolean copyAllowed) {
+    public void pushMessage(String message, boolean copyAllowed, long expiration) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "pushMessage: message=" + message + " copyAllowed=" + copyAllowed);
+            Log.d(LOG_TAG, "pushMessage: message=" + message + " copyAllowed=" + copyAllowed + " expiration=" + expiration);
         }
 
         if (mConversation == null) {
@@ -221,7 +221,7 @@ public class ShareService extends AbstractTwinmeService {
         if (DEBUG) {
             Log.d(LOG_TAG, "ConversationService.pushObject: requestId=" + requestId + " conversationId=" + mConversationId + " message=" + message + " copyAllowed=" + copyAllowed);
         }
-        mTwinmeContext.pushMessage(requestId, mConversation, null, null, message, copyAllowed, 0);
+        mTwinmeContext.pushMessage(requestId, mConversation, null, null, message, copyAllowed, expiration);
     }
 
     public void pushFile(@NonNull Uri file, @NonNull String filename, @NonNull ConversationService.Descriptor.Type type, boolean toDelete, boolean allowCopy,
@@ -393,6 +393,7 @@ public class ShareService extends AbstractTwinmeService {
         }
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

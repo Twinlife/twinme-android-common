@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2024 twinlife SA.
+ *  Copyright (c) 2018-2026 twinlife SA.
  *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
@@ -79,7 +79,7 @@ public class AudioCallService extends AbstractTwinmeService {
         mObserver = observer;
 
         mOriginatorId = originatorId;
-        mTwinmeContext.assertNotNull(ServiceAssertPoint.NULL_SUBJECT, originatorId, 84);
+        mTwinmeContext.assertNotNull(ServiceAssertPoint.NULL_SUBJECT, originatorId, 82);
 
         mGroupId = groupId;
 
@@ -123,6 +123,7 @@ public class AudioCallService extends AbstractTwinmeService {
         super.onTwinlifeOnline();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -211,6 +212,8 @@ public class AudioCallService extends AbstractTwinmeService {
                 }
 
             }
+        } else {
+            onError(GET_CONTACT, errorCode, null);
         }
         onOperation();
     }
@@ -252,6 +255,7 @@ public class AudioCallService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

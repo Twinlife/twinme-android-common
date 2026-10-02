@@ -48,7 +48,7 @@ public class SecretSpaceService extends AbstractTwinmeService {
     public SecretSpaceService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "SpaceService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "SecretSpaceService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -75,19 +75,21 @@ public class SecretSpaceService extends AbstractTwinmeService {
         TwinmeContext.Predicate<Space> filter = (Space space) -> (name.equals(space.getName()));
 
         mTwinmeContext.findSpaces(filter, (ErrorCode errorCode, List<Space> spaces) -> {
-            runOnGetSpaces(mObserver, spaces);
+            if (spaces != null) {
+                runOnGetSpaces(mObserver, spaces);
+            }
             onOperation();
         });
     }
 
     public void setSpace(@NonNull Space space) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "setCurrentSpace: space= " + space);
+            Log.d(LOG_TAG, "setSpace: space= " + space);
         }
 
         long requestId = newOperation(SET_CURRENT_SPACE);
         if (DEBUG) {
-            Log.d(LOG_TAG, "setCurrentSpace: requestId=" + requestId + " space= " + space);
+            Log.d(LOG_TAG, "setSpace: requestId=" + requestId + " space= " + space);
         }
         showProgressIndicator();
         mTwinmeContext.setCurrentSpace(requestId, space);
@@ -103,6 +105,7 @@ public class SecretSpaceService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

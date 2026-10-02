@@ -206,9 +206,8 @@ public class ShareProfileService extends AbstractTwinmeService {
         if ((mState & GET_CURRENT_SPACE) == 0) {
             mState |= GET_CURRENT_SPACE;
 
-            long requestId = newOperation(GET_CURRENT_SPACE);
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace: requestId=" + requestId);
+                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace");
             }
 
             mTwinmeContext.getCurrentSpace(this::onGetCurrentSpace);
@@ -457,6 +456,7 @@ public class ShareProfileService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

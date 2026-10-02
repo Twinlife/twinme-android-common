@@ -242,7 +242,7 @@ public class NotificationService extends AbstractTwinmeService {
         }
 
         if (BuildConfig.ENABLE_CHECKS && Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(247));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(245));
         }
         if (!mIsTwinlifeReady) {
 
@@ -256,9 +256,8 @@ public class NotificationService extends AbstractTwinmeService {
         if ((mState & GET_CURRENT_SPACE) == 0) {
             mState |= GET_CURRENT_SPACE;
 
-            long requestId = newOperation(GET_CURRENT_SPACE);
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace: requestId=" + requestId);
+                Log.d(LOG_TAG, "TwinmeContext.getCurrentSpace");
             }
 
             mTwinmeContext.getCurrentSpace((ErrorCode errorCode, Space space) -> {

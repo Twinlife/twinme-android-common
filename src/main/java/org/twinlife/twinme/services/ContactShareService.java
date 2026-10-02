@@ -168,6 +168,8 @@ public class ContactShareService extends AbstractTwinmeService {
 
             mState &= ~(GET_CONTACT | GET_CONTACT_DONE | GET_DESCRIPTOR | GET_DESCRIPTOR_DONE | GET_OR_CREATE_CONVERSATION | ANSWER_SHARE_CONTACT);
         }
+
+        startOperation();
     }
 
     @Override
@@ -254,11 +256,10 @@ public class ContactShareService extends AbstractTwinmeService {
             if ((mState & PUSH_SHARE_CONTACT) == 0) {
                 mState |= PUSH_SHARE_CONTACT;
 
-                long requestId = newOperation(PUSH_SHARE_CONTACT);
-
                 if (mConversation == null || mShareContactAvatar == null || mShareContactId == null) {
                     onError(PUSH_SHARE_CONTACT, ErrorCode.ITEM_NOT_FOUND, null);
                 } else {
+                    long requestId = newOperation(PUSH_SHARE_CONTACT);
                     mTwinmeContext.pushContactShare(requestId, mConversation, null, mShareContact.getName(), mShareContactAvatar, mShareContactId,0);
                 }
             }

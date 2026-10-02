@@ -246,7 +246,7 @@ public class CallsService extends AbstractTwinmeService {
         @Override
         public void onDeleteDescriptors(long requestId, @NonNull Conversation conversation, @NonNull DescriptorId[] descriptorList) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "ConversationServiceObserver.onDeleteDescriptor: requestId=" + requestId
+                Log.d(LOG_TAG, "ConversationServiceObserver.onDeleteDescriptors: requestId=" + requestId
                         + " conversation=" + conversation + " descriptorList=" + descriptorList);
             }
 
@@ -279,7 +279,7 @@ public class CallsService extends AbstractTwinmeService {
     public CallsService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull Observer observer, @Nullable UUID originatorId, @Nullable Originator.Type originatorType) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "ContactsService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "CallsService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -339,7 +339,7 @@ public class CallsService extends AbstractTwinmeService {
 
         long requestId = newOperation(DELETE_DESCRIPTOR);
         if (DEBUG) {
-            Log.d(LOG_TAG, "deleteDescriptor: requestId=" + requestId + " descriptor=" + descriptor);
+            Log.d(LOG_TAG, "deleteCallDescriptor: requestId=" + requestId + " descriptor=" + descriptor);
         }
         showProgressIndicator();
 
@@ -436,7 +436,7 @@ public class CallsService extends AbstractTwinmeService {
 
     private void onGetOriginator(@NonNull ErrorCode errorCode, @Nullable Originator originator) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "updateOriginator: originator=" + originator);
+            Log.d(LOG_TAG, "onGetOriginator: errorCode=" + errorCode + " originator=" + originator);
         }
 
         mState |= GET_ORIGINATOR_DONE;
@@ -629,7 +629,7 @@ public class CallsService extends AbstractTwinmeService {
 
     private void onDeleteDescriptors(@NonNull DescriptorId[] descriptorList) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onDeleteDescriptor: descriptorList=" + descriptorList.length);
+            Log.d(LOG_TAG, "onDeleteDescriptors: descriptorList=" + descriptorList.length);
         }
 
         mState |= DELETE_DESCRIPTOR_DONE;
@@ -641,6 +641,7 @@ public class CallsService extends AbstractTwinmeService {
                 mObserver.onDeleteDescriptors(descriptorIdSet);
             }
         });
+        onOperation();
     }
 
     private void onResetConversation(@NonNull Conversation conversation, @NonNull ClearMode clearMode) {
@@ -687,7 +688,7 @@ public class CallsService extends AbstractTwinmeService {
 
     private void onGetCallReceivers(@NonNull List<CallReceiver> callReceivers) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onGetCallReceiver callReceivers.size =" + callReceivers.size());
+            Log.d(LOG_TAG, "onGetCallReceivers: callReceivers.size=" + callReceivers.size());
         }
 
         mState |= GET_CALL_RECEIVERS_DONE;
@@ -815,7 +816,7 @@ public class CallsService extends AbstractTwinmeService {
                 mState |= GET_GROUPS;
                 final Filter<RepositoryObject> filter = new Filter<>(mSpace);
                 if (DEBUG) {
-                    Log.d(LOG_TAG, "TwinmeContext.findCallReceivers: filter=" + filter);
+                    Log.d(LOG_TAG, "TwinmeContext.findGroups: filter=" + filter);
                 }
                 // TwinmeContext.Predicate<Group> filter = (Group group) -> (group.getSpace() == mSpace);
                 mTwinmeContext.findGroups(filter, this::onGetGroups);
@@ -862,9 +863,8 @@ public class CallsService extends AbstractTwinmeService {
         //
         if ((mState & GET_DESCRIPTORS) == 0) {
             mState |= GET_DESCRIPTORS;
-            long requestId = newOperation(GET_DESCRIPTORS);
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContext.getDescriptors: requestId=" + requestId);
+                Log.d(LOG_TAG, "TwinmeContext.getDescriptors");
             }
 
             List<Descriptor> descriptors;

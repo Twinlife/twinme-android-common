@@ -73,7 +73,7 @@ public class CleanUpService extends AbstractTwinmeService implements ExportObser
                           @Nullable UUID spaceId, @Nullable UUID contactId, @Nullable UUID groupId) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "ExportService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "CleanUpService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -186,7 +186,7 @@ public class CleanUpService extends AbstractTwinmeService implements ExportObser
     @Override
     public void onError(@NonNull String message) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "dispose");
+            Log.d(LOG_TAG, "onError: message=" + message);
         }
 
         runOnUiThread(() -> {
@@ -262,14 +262,18 @@ public class CleanUpService extends AbstractTwinmeService implements ExportObser
 
         // Be careful: after a fresh installation, there is no space (nothing to cleanup but don't crash).
         if (mObserver != null && space != null) {
-            mObserver.onGetSpace(space);
-            mSpace = space;
+            runOnUiThread(() -> {
+                if (mObserver != null) {
+                    mObserver.onGetSpace(space);
+                }
+            });
             mExport.prepareSpace(space);
         }
 
         onOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

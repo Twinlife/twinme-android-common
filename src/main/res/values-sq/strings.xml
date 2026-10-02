@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Kthehu</string>
+    <string name="application_confirm">Konfirmo</string>
+    <string name="application_later">Më vonë</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Anulo</string>
+    <string name="deleted_account_view_warning">Paralajmërim‼️</string>
+    <string name="streaming_audio_view_error_message">Ndodhi një gabim. Ju lutemi provoni përsëri.</string>
+    <string name="edit_contact_view_message">Ky kontakt nuk do të mund t’ju kontaktojë më.</string>
+</resources>

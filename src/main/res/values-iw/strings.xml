@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">חזרה</string>
+    <string name="application_confirm">לְאַשֵׁר</string>
+    <string name="application_later">אחר כך</string>
+    <string name="application_ok">בסדר</string>
+    <string name="application_cancel">בטל</string>
+    <string name="deleted_account_view_warning">שים לב‼️</string>
+    <string name="streaming_audio_view_error_message">אירעה שגיאה. בבקשה נסה שוב.</string>
+    <string name="edit_contact_view_message">איש קשר זה לא יוכל עוד להשיג אותך.</string>
+</resources>

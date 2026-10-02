@@ -121,6 +121,7 @@ dependencies {
     implementation libs.androidx.media
     implementation libs.androidx.exifinterface
     implementation libs.androidx.documentfile
+    implementation libs.material
     api libs.androidx.percentlayout
 
     api libs.androidx.media3.exoplayer
@@ -137,12 +138,14 @@ dependencies {
 
     skredImplementation libs.play.services.location
 
+    googleImplementation libs.play.services.billing
     googleImplementation(libs.firebase.messaging) {
         exclude group: 'com.google.firebase', module: 'firebase-core'
         exclude group: 'com.google.firebase', module: 'firebase-analytics'
         exclude group: 'com.google.firebase', module: 'firebase-measurement-connector'
     }
 
+    universalImplementation libs.play.services.billing
     universalImplementation(libs.firebase.messaging) {
         exclude group: 'com.google.firebase', module: 'firebase-core'
         exclude group: 'com.google.firebase', module: 'firebase-analytics'
@@ -151,6 +154,9 @@ dependencies {
 
     huaweiImplementation libs.huawei.push
     universalImplementation libs.huawei.push
+
+    huaweiImplementation libs.huawei.iap
+    universalImplementation libs.huawei.iap
 
     skredImplementation libs.play.services.location
 

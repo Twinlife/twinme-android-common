@@ -98,7 +98,7 @@ public class Intents {
     public static final String INTENT_GROUP_ALLOW_INVITATION = "org.twinlife.device.android.twinme.GroupAllowInvitation";
     public static final String INTENT_GROUP_ALLOW_MESSAGE = "org.twinlife.device.android.twinme.GroupAllowMessage";
     public static final String INTENT_GROUP_INVITE_MEMBER_AS_CONTACT = "org.twinlife.device.android.twinme.GroupInviteMemberAsContact";
-    public static final String INTENT_MIGRATION_FROM_CURRENT_DEVICE = "org.twinlife.device.android.twinme.MigrationFromCurrentDevice";
+    public static final String INTENT_MIGRATION_SCANNER_MODE = "org.twinlife.device.android.twinme.MigrationScannerMode";
     public static final String INTENT_TRUST_METHOD = "org.twinlife.device.android.twinme.TrustMethod";
     public static final String INTENT_START_SCAN = "org.twinlife.device.android.twinme.StartScan";
     public static final String INTENT_SHOW_ONBOARDING = "org.twinlife.device.android.twinme.ShowOnboarding";

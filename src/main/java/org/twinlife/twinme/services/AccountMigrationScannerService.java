@@ -284,7 +284,7 @@ public class AccountMigrationScannerService extends AbstractTwinmeService {
                 mState |= BIND_ACCOUNT_MIGRATION;
 
                 if (DEBUG) {
-                    Log.d(LOG_TAG, "TwincodeOutboundService.bindDeviceMigration: twincodeOutboundId=" + mTwincodeOutboundId);
+                    Log.d(LOG_TAG, "TwinmeContext.bindAccountMigration: twincodeOutboundId=" + mTwincodeOutboundId);
                 }
                 mTwinmeContext.bindAccountMigration(mAccountMigration, mTwincodeOutbound, (ErrorCode status, AccountMigration accountMigration) -> {
                     if (status == ErrorCode.SUCCESS && accountMigration != null) {
@@ -391,7 +391,7 @@ public class AccountMigrationScannerService extends AbstractTwinmeService {
 
     private void onCreateURI(@NonNull ErrorCode errorCode, @Nullable TwincodeURI uri) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onCreateAccountMigration: errorCode=" + errorCode + " uri=" + uri);
+            Log.d(LOG_TAG, "onCreateURI: errorCode=" + errorCode + " uri=" + uri);
         }
 
         runOnUiThread(() -> {

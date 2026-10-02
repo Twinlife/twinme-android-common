@@ -83,7 +83,7 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
     public EditContactCapabilitiesService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "EditIdentityService: activity=" + activity + " twinmeContext=" + twinmeContext
+            Log.d(LOG_TAG, "EditContactCapabilitiesService: activity=" + activity + " twinmeContext=" + twinmeContext
                     + " observer=" + observer);
         }
 
@@ -210,9 +210,7 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
         }
 
         mState |= UPDATE_CONTACT_DONE;
-        if ((mState & UPDATE_CONTACT) == 0 || (mState & UPDATE_CONTACT_DONE) != 0) {
-            runOnUpdateContact(mObserver, contact, null);
-        }
+        runOnUpdateContact(mObserver, contact, null);
         onOperation();
     }
 
@@ -248,6 +246,7 @@ public class EditContactCapabilitiesService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

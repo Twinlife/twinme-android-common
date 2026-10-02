@@ -1,7 +1,6 @@
 /*
  *  Copyright (c) 2025-2026 twinlife SA.
- *
- *  All Rights Reserved.
+ *  SPDX-License-Identifier: AGPL-3.0-only
  *
  *  Contributors:
  *   Romain Kolb (romain.kolb@skyrock.com)
@@ -462,7 +461,7 @@ public class BackupService extends Service {
 
     private void onActionStop(@NonNull Intent intent) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onActionTerminate: intent=" + intent);
+            Log.d(LOG_TAG, "onActionStop: intent=" + intent);
         }
 
         finish();
@@ -650,7 +649,7 @@ public class BackupService extends Service {
 
     public void onActionCheckFileCompatibility(@NonNull Intent intent) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onActionCheckFileSignature: intent=" + intent);
+            Log.d(LOG_TAG, "onActionCheckFileCompatibility: intent=" + intent);
         }
 
         if (mBackupService == null) {
@@ -884,7 +883,7 @@ public class BackupService extends Service {
 
     private void sendCheckFileCompatibilityResult(org.twinlife.twinlife.BackupService.ErrorCode result) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "sendCheckFileSignatureResult: result=" + result);
+            Log.d(LOG_TAG, "sendCheckFileCompatibilityResult: result=" + result);
         }
 
         Intent intent = new Intent(Intents.INTENT_BACKUP_SERVICE_MESSAGE);

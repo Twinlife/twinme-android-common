@@ -162,7 +162,7 @@ public class ShowRoomService extends AbstractTwinmeService {
                            @NonNull UUID roomId) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "EditRoomService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "ShowRoomService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -228,6 +228,7 @@ public class ShowRoomService extends AbstractTwinmeService {
     //
     // Private methods
     //
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -429,7 +430,7 @@ public class ShowRoomService extends AbstractTwinmeService {
         mRoom = contact;
 
         // Check if the image was modified.
-        if (mAvatarId != null && mAvatarId.equals(contact.getAvatarId())) {
+        if (mAvatarId == null || !mAvatarId.equals(contact.getAvatarId())) {
             mAvatarId = contact.getAvatarId();
             mAvatar = getImage(contact);
             mState &= ~(GET_ROOM_THUMBNAIL_IMAGE | GET_ROOM_THUMBNAIL_IMAGE_DONE | GET_ROOM_IMAGE | GET_ROOM_IMAGE_DONE);
@@ -470,7 +471,7 @@ public class ShowRoomService extends AbstractTwinmeService {
 
     private void onGetRoomMember(@NonNull ErrorCode errorCode, @Nullable TwincodeOutbound twincodeOutbound) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onGetGroupMember: member=" + twincodeOutbound);
+            Log.d(LOG_TAG, "onGetRoomMember: errorCode=" + errorCode + " twincodeOutbound=" + twincodeOutbound);
         }
 
         mState |= GET_ROOM_MEMBER_DONE;

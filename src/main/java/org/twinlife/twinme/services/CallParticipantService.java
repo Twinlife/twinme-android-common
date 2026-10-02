@@ -37,7 +37,6 @@ public class CallParticipantService extends AbstractTwinmeService {
     private static final int GET_CONTACTS_DONE = 1 << 3;
     private static final int FIND_CONTACTS = 1 << 4;
     private static final int FIND_CONTACTS_DONE = 1 << 5;
-    private static final int GET_SPACE = 1 << 6;
     private static final int GET_SPACE_DONE = 1 << 7;
     private static final int GET_SPACES = 1 << 8;
     private static final int GET_SPACES_DONE = 1 << 9;
@@ -85,7 +84,7 @@ public class CallParticipantService extends AbstractTwinmeService {
                                 @NonNull Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "CallParticipantService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -107,10 +106,6 @@ public class CallParticipantService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "getSpace: spaceId=" + spaceId);
         }
 
-        long requestId = newOperation(GET_SPACE);
-        if (DEBUG) {
-            Log.d(LOG_TAG, "getSpace: requestId=" + requestId + " spaceId=" + spaceId);
-        }
         showProgressIndicator();
 
         mTwinmeContext.getSpace(spaceId, (ErrorCode errorCode, Space space) -> {

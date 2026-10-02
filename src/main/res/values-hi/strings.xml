@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">वापस जाएँ</string>
+    <string name="application_confirm">पुष्टि करें</string>
+    <string name="application_later">बाद में</string>
+    <string name="application_ok">ठीक है</string>
+    <string name="application_cancel">रद्द करें</string>
+    <string name="deleted_account_view_warning">ध्यान‼️</string>
+    <string name="streaming_audio_view_error_message">एक गलती हुई है। कृपया पुन: प्रयास करें।</string>
+    <string name="edit_contact_view_message">यह संपर्क अब आप तक नहीं पहुँच पाएगा।</string>
+</resources>

@@ -77,13 +77,14 @@ public class InAppSubscriptionService extends AbstractTwinmeService {
     private String mProductId;
     private String mPurchaseToken;
     private String mPurchaseOrderId;
+    private AccountService.MerchantIdentification mMerchantIdentification;
 
     private final InAppSubscriptionAccountServiceObserver mInAppSubscriptionAccountServiceObserver;
 
     public InAppSubscriptionService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull InAppSubscriptionService.Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "DeleteAccountService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "InAppSubscriptionService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -135,14 +136,15 @@ public class InAppSubscriptionService extends AbstractTwinmeService {
         super.dispose();
     }
 
-    public void subscribeFeature(@NonNull String productId, @NonNull String purchaseToken, @NonNull String purchaseOrderId) {
+    public void subscribeFeature(@NonNull String productId, @NonNull String purchaseToken, @NonNull String purchaseOrderId, @NonNull AccountService.MerchantIdentification merchantIdentification) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "subscribeFeature: " + productId + " purchaseToken = " + purchaseToken + " purchaseOrderId = " + purchaseOrderId);
+            Log.d(LOG_TAG, "subscribeFeature: productId=" + productId + " purchaseToken=" + purchaseToken + " purchaseOrderId=" + purchaseOrderId + " merchantIdentification=" + merchantIdentification);
         }
 
         mProductId = productId;
         mPurchaseToken = purchaseToken;
         mPurchaseOrderId = purchaseOrderId;
+        mMerchantIdentification = merchantIdentification;
 
         mWork = SUBSCRIBE_FEATURE;
         mState &= ~(SUBSCRIBE_FEATURE | SUBSCRIBE_FEATURE_DONE);
@@ -164,6 +166,7 @@ public class InAppSubscriptionService extends AbstractTwinmeService {
         startOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -194,7 +197,7 @@ public class InAppSubscriptionService extends AbstractTwinmeService {
                 mState |= SUBSCRIBE_FEATURE;
 
                 long requestId = newOperation(SUBSCRIBE_FEATURE);
-                mTwinmeContext.getAccountService().subscribeFeature(requestId, AccountService.MerchantIdentification.MERCHANT_GOOGLE, mProductId, mPurchaseToken, mPurchaseOrderId);
+                mTwinmeContext.getAccountService().subscribeFeature(requestId, mMerchantIdentification, mProductId, mPurchaseToken, mPurchaseOrderId);
                 return;
             }
             if ((mState & SUBSCRIBE_FEATURE_DONE) == 0) {
@@ -240,7 +243,7 @@ public class InAppSubscriptionService extends AbstractTwinmeService {
 
     private void onSubscribeUpdate(@NonNull ErrorCode errorCode) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onSubscribeUpdate: " + errorCode);
+            Log.d(LOG_TAG, "onSubscribeFeature: errorCode=" + errorCode);
         }
 
         // When we are offline or failed to send the request, we must retry.

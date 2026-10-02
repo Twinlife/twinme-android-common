@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">戻る</string>
+    <string name="application_confirm">確認</string>
+    <string name="application_later">後で</string>
+    <string name="application_ok">はい</string>
+    <string name="application_cancel">キャンセル</string>
+    <string name="deleted_account_view_warning">警告です‼️</string>
+    <string name="streaming_audio_view_error_message">エラーが発生しました。 もう一度試してください。</string>
+    <string name="edit_contact_view_message">この連絡先はあなたに連絡できなくなります。</string>
+</resources>

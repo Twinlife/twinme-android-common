@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Tillbaka</string>
+    <string name="application_confirm">Bekräfta</string>
+    <string name="application_later">Senare</string>
+    <string name="application_ok">Ok</string>
+    <string name="application_cancel">Avbryt</string>
+    <string name="deleted_account_view_warning">Uppmärksamhet‼️</string>
+    <string name="streaming_audio_view_error_message">Ett fel har uppstått. Var god försök igen.</string>
+    <string name="edit_contact_view_message">Denna kontakt kommer inte längre att kunna nå dig.</string>
+</resources>

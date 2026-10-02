@@ -92,7 +92,7 @@ public class ShowSpaceService extends AbstractTwinmeService {
         @Override
         public void onCreateProfile(long requestId, @NonNull Profile profile) {
             if (DEBUG) {
-                Log.d(LOG_TAG, "TwinmeContextObserver.onUpdateProfile: requestId=" + requestId + " profile=" + profile);
+                Log.d(LOG_TAG, "TwinmeContextObserver.onCreateProfile: requestId=" + requestId + " profile=" + profile);
             }
 
             ShowSpaceService.this.onUpdateProfile(profile);
@@ -341,6 +341,7 @@ public class ShowSpaceService extends AbstractTwinmeService {
     //
     // Private methods
     //
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

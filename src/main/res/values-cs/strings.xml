@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Zpět</string>
+    <string name="application_confirm">Potvrdit</string>
+    <string name="application_later">Později</string>
+    <string name="application_ok">OK</string>
+    <string name="application_cancel">Zrušit</string>
+    <string name="deleted_account_view_warning">Pozor‼️</string>
+    <string name="streaming_audio_view_error_message">Došlo k chybě. Zkuste to prosím znovu.</string>
+    <string name="edit_contact_view_message">Tento kontakt vás již nebude moci kontaktovat.</string>
+</resources>

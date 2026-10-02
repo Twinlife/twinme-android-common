@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">Geri</string>
+    <string name="application_confirm">Onaylamak</string>
+    <string name="application_later">Sonra</string>
+    <string name="application_ok">Tamam</string>
+    <string name="application_cancel">İptal et</string>
+    <string name="deleted_account_view_warning">Dikkat‼️</string>
+    <string name="streaming_audio_view_error_message">Bir hata meydana geldi. Lütfen tekrar deneyin.</string>
+    <string name="edit_contact_view_message">Bu kişi artık size ulaşamayacak.</string>
+</resources>

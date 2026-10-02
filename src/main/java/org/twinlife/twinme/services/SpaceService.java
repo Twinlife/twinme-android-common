@@ -50,7 +50,6 @@ public class SpaceService extends AbstractTwinmeService {
     private static final int MOVE_CONTACT_SPACE_DONE = 1 << 11;
     private static final int GET_CONTACT = 1 << 12;
     private static final int GET_CONTACT_DONE = 1 << 13;
-    private static final int GET_SPACES_NOTIFICATIONS = 1 << 16;
     private static final int GET_SPACES_NOTIFICATIONS_DONE = 1 << 17;
     private static final int UPDATE_SPACE = 1 << 18;
     private static final int UPDATE_SPACE_DONE = 1 << 19;
@@ -276,10 +275,6 @@ public class SpaceService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "findSpacesNotifications");
         }
 
-        long requestId = newOperation(GET_SPACES_NOTIFICATIONS);
-        if (DEBUG) {
-            Log.d(LOG_TAG, "findSpacesNotifications: requestId=" + requestId);
-        }
         showProgressIndicator();
 
         mTwinmeContext.getNotificationStats((ErrorCode errorCode, Map<Space, NotificationStat> stats) -> {
@@ -323,12 +318,12 @@ public class SpaceService extends AbstractTwinmeService {
 
     public void setSpace(@NonNull Space space) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "setCurrentSpace: space= " + space);
+            Log.d(LOG_TAG, "setSpace: space= " + space);
         }
 
         long requestId = newOperation(SET_CURRENT_SPACE);
         if (DEBUG) {
-            Log.d(LOG_TAG, "setCurrentSpace: requestId=" + requestId + " space= " + space);
+            Log.d(LOG_TAG, "setSpace: requestId=" + requestId + " space= " + space);
         }
         showProgressIndicator();
 
@@ -354,12 +349,12 @@ public class SpaceService extends AbstractTwinmeService {
 
     public void moveContactToSpace(@NonNull Space space, @NonNull Contact contact) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "moveContact: space= " + space + " contact= " + contact);
+            Log.d(LOG_TAG, "moveContactToSpace: space= " + space + " contact= " + contact);
         }
 
         long requestId = newOperation(MOVE_CONTACT_SPACE);
         if (DEBUG) {
-            Log.d(LOG_TAG, "moveContact: requestId=" + requestId + " space= " + space);
+            Log.d(LOG_TAG, "moveContactToSpace: requestId=" + requestId + " space= " + space);
         }
         showProgressIndicator();
 
@@ -373,7 +368,7 @@ public class SpaceService extends AbstractTwinmeService {
 
         long requestId = newOperation(MOVE_GROUP_SPACE);
         if (DEBUG) {
-            Log.d(LOG_TAG, "moveToSpace: requestId=" + requestId + " space= " + space);
+            Log.d(LOG_TAG, "moveGroupToSpace: requestId=" + requestId + " space= " + space);
         }
         showProgressIndicator();
 
@@ -469,10 +464,6 @@ public class SpaceService extends AbstractTwinmeService {
             Log.d(LOG_TAG, "getGroup: groupId= " + groupId);
         }
 
-        long requestId = newOperation(GET_GROUP);
-        if (DEBUG) {
-            Log.d(LOG_TAG, "getGroup: requestId=" + requestId + " groupId= " + groupId);
-        }
         showProgressIndicator();
 
         mTwinmeContext.getGroup(groupId, this::onGetGroup);
@@ -648,9 +639,15 @@ public class SpaceService extends AbstractTwinmeService {
         });
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
+        }
+
+        if (!mIsTwinlifeReady) {
+
+            return;
         }
 
         //
@@ -742,6 +739,7 @@ public class SpaceService extends AbstractTwinmeService {
         hideProgressIndicator();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="application_back">뒤로</string>
+    <string name="application_confirm">확인</string>
+    <string name="application_later">나중</string>
+    <string name="application_ok">확인</string>
+    <string name="application_cancel">취소</string>
+    <string name="deleted_account_view_warning">주목‼️</string>
+    <string name="streaming_audio_view_error_message">오류가 발생했습니다. 다시 시도해 주세요.</string>
+    <string name="edit_contact_view_message">이 연락처는 더 이상 귀하에게 연락할 수 없습니다.</string>
+</resources>

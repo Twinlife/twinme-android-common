@@ -115,7 +115,10 @@ public class EditRoomService extends AbstractTwinmeService {
                 return;
             }
 
-            long operationId = getOperation(mRoomRequestId);
+            Integer operationId = getOperation(mRoomRequestId);
+            if (operationId == null) {
+                return;
+            }
             EditRoomService.this.onRoomCommandResult(result, operationId);
             onOperation();
         }
@@ -261,6 +264,7 @@ public class EditRoomService extends AbstractTwinmeService {
     //
     // Private methods
     //
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");

@@ -313,7 +313,7 @@ public class AbstractTwinmeService {
         }
 
         if (!Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(311));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(316));
         }
 
         Bitmap cachedImage = getCachedImage(imageId, null);
@@ -341,7 +341,7 @@ public class AbstractTwinmeService {
         }
 
         if (Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(339));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(344));
         }
 
         if (imageId == null) {
@@ -374,7 +374,7 @@ public class AbstractTwinmeService {
         }
 
         if (!Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(373));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(377));
         }
 
         if (originator == null) {
@@ -406,7 +406,7 @@ public class AbstractTwinmeService {
         }
 
         if (Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(405));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(409));
         }
 
         if (originator == null || originator.getAvatarId() == null) {
@@ -427,7 +427,7 @@ public class AbstractTwinmeService {
         }
 
         if (Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(425));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(430));
         }
 
         if (twincodeOutbound == null || twincodeOutbound.getAvatarId() == null) {
@@ -444,7 +444,7 @@ public class AbstractTwinmeService {
         }
 
         if (!Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(443));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(447));
         }
 
         if (profile == null) {
@@ -531,7 +531,7 @@ public class AbstractTwinmeService {
         }
 
         if (!Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(529));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(534));
         }
 
         if (groupMember == null || groupMember.getAvatarId() == null) {
@@ -585,7 +585,7 @@ public class AbstractTwinmeService {
         }
 
         if (!Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(583));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(588));
         }
 
         if (space == null || !space.hasSpaceAvatar()) {
@@ -698,7 +698,7 @@ public class AbstractTwinmeService {
                 break;
             default:
                 if (DEBUG) {
-                    Log.d(LOG_TAG, "getImageFromServer: no observer for originator: " + originator);
+                    Log.d(LOG_TAG, "notifyObserver: no observer for originator: " + originator);
                 }
                 break;
         }
@@ -794,7 +794,7 @@ public class AbstractTwinmeService {
 
     protected void runOnGetGroup(@Nullable GroupObserver observer, @NonNull Group group, @Nullable Bitmap avatar) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "runOnGetContact group=" + group);
+            Log.d(LOG_TAG, "runOnGetGroup group=" + group);
         }
 
         if (observer != null) {
@@ -852,7 +852,7 @@ public class AbstractTwinmeService {
 
     protected void runOnGetContacts(@Nullable ContactListObserver observer, @NonNull List<Contact> contacts) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "runOnGetContactNotFound");
+            Log.d(LOG_TAG, "runOnGetContacts");
         }
 
         if (observer != null) {
@@ -940,7 +940,7 @@ public class AbstractTwinmeService {
         }
 
         if (BuildConfig.ENABLE_CHECKS && !Utils.isMainThread()) {
-            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(906));
+            mTwinmeContext.assertion(ServiceAssertPoint.MAIN_THREAD, AssertPoint.create(getClass()).putMarker(943));
         }
         if (mBaseObserver != null) {
             mBaseObserver.showProgressIndicator();
@@ -992,7 +992,7 @@ public class AbstractTwinmeService {
 
     protected void onConnectionStatusChange(@NonNull ConnectionStatus connectionStatus) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onConnectionStatus " + connectionStatus);
+            Log.d(LOG_TAG, "onConnectionStatusChange " + connectionStatus);
         }
 
         mConnected = connectionStatus == ConnectionStatus.CONNECTED;

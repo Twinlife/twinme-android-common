@@ -334,7 +334,7 @@ public class GroupInvitationService extends AbstractTwinmeService {
 
         long requestId = newOperation(MOVE_GROUP_SPACE);
         if (DEBUG) {
-            Log.d(LOG_TAG, "moveToSpace: requestId=" + requestId + " space= " + space);
+            Log.d(LOG_TAG, "moveGroupToSpace: requestId=" + requestId + " space= " + space);
         }
         mTwinmeContext.moveToSpace(requestId, group, space);
     }
@@ -354,7 +354,7 @@ public class GroupInvitationService extends AbstractTwinmeService {
 
     private void onGetSpace(@NonNull ErrorCode errorCode, @Nullable Space space) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onSetCurrentSpace: space=" + space);
+            Log.d(LOG_TAG, "onGetSpace: errorCode=" + errorCode + " space=" + space);
         }
 
         mState |= GET_SPACE_DONE;
@@ -490,6 +490,7 @@ public class GroupInvitationService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -622,6 +623,7 @@ public class GroupInvitationService extends AbstractTwinmeService {
                 long requestId = newOperation(DECLINE_INVITATION);
                 ErrorCode result = mConversationService.joinGroup(requestId, mInvitation.getDescriptorId(),null);
                 if (result != ErrorCode.SUCCESS) {
+                    finishOperation(requestId);
                     onError(DECLINE_INVITATION, result, null);
                 }
             }
@@ -647,6 +649,7 @@ public class GroupInvitationService extends AbstractTwinmeService {
         hideProgressIndicator();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

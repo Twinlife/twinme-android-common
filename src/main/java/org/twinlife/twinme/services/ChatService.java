@@ -350,7 +350,7 @@ public class ChatService extends AbstractTwinmeService {
                        @NonNull DisplayCallsMode callsMode, @NonNull ChatService.Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "ContactsService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "ChatService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
@@ -386,7 +386,7 @@ public class ChatService extends AbstractTwinmeService {
 
     public void findConversationsByName(@NonNull String name) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "findContactsByName: name=" + name);
+            Log.d(LOG_TAG, "findConversationsByName: name=" + name);
         }
 
         mFindName = normalize(name);
@@ -428,7 +428,7 @@ public class ChatService extends AbstractTwinmeService {
 
     public boolean isGetDescriptorsDone() {
         if (DEBUG) {
-            Log.d(LOG_TAG, "DescriptorsDone");
+            Log.d(LOG_TAG, "isGetDescriptorsDone");
         }
 
         return mGetDescriptorsDone;
@@ -593,7 +593,7 @@ public class ChatService extends AbstractTwinmeService {
         }
 
         if (group.getSpace() != mSpace) {
-            mOriginatorIds.add(group.getId());
+            mOriginatorIds.remove(group.getId());
             runOnUiThread(() -> {
                 if (mObserver != null) {
                     mObserver.onDeleteGroup(group.getId());
@@ -726,7 +726,7 @@ public class ChatService extends AbstractTwinmeService {
 
     private void onDeleteDescriptors(@NonNull DescriptorId[] descriptorList, @NonNull Conversation conversation) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "onDeleteDescriptor: descriptorList=" + descriptorList.length + "conversation=" + conversation);
+            Log.d(LOG_TAG, "onDeleteDescriptors: descriptorList=" + descriptorList.length + " conversation=" + conversation);
         }
 
         if (mOriginatorIds.contains(conversation.getContactId())) {
@@ -824,6 +824,7 @@ public class ChatService extends AbstractTwinmeService {
         onOperation();
     }
 
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
@@ -975,6 +976,7 @@ public class ChatService extends AbstractTwinmeService {
         hideProgressIndicator();
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);
@@ -990,6 +992,7 @@ public class ChatService extends AbstractTwinmeService {
         if ((errorCode == ErrorCode.ITEM_NOT_FOUND || errorCode == ErrorCode.EXPIRED) && operationId == GET_GROUP_MEMBER) {
             mState |= GET_GROUP_MEMBER_DONE;
             nextGroupMember();
+            onOperation();
             return;
         }
 

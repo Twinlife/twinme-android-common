@@ -48,7 +48,7 @@ public class EditContactService extends ShowContactService {
 
     public void updateContact(@NonNull Contact contact, @NonNull String contactName, @Nullable String contactDescription) {
         if (DEBUG) {
-            Log.d(LOG_TAG, "getContact: contact=" + contact + " contactName=" + contactName + " contactDescription=" + contactDescription);
+            Log.d(LOG_TAG, "updateContact: contact=" + contact + " contactName=" + contactName + " contactDescription=" + contactDescription);
         }
 
         mWork |= UPDATE_CONTACT;
@@ -63,9 +63,15 @@ public class EditContactService extends ShowContactService {
     //
     // Private methods
     //
+    @Override
     protected void onOperation() {
         if (DEBUG) {
             Log.d(LOG_TAG, "onOperation");
+        }
+
+        if (!mIsTwinlifeReady) {
+
+            return;
         }
 
         //
@@ -96,6 +102,7 @@ public class EditContactService extends ShowContactService {
         super.onUpdateContact(contact);
     }
 
+    @Override
     protected void onError(int operationId, ErrorCode errorCode, @Nullable String errorParameter) {
         if (DEBUG) {
             Log.d(LOG_TAG, "onError: operationId=" + operationId + " errorCode=" + errorCode + " errorParameter=" + errorParameter);

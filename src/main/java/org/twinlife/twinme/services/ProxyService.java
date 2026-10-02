@@ -51,7 +51,7 @@ public class ProxyService extends AbstractTwinmeService {
     public ProxyService(@NonNull TwinmeActivity activity, @NonNull TwinmeContext twinmeContext, @NonNull ProxyService.Observer observer) {
         super(LOG_TAG, activity, twinmeContext, observer);
         if (DEBUG) {
-            Log.d(LOG_TAG, "ResetConversationService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
+            Log.d(LOG_TAG, "ProxyService: activity=" + activity + " twinmeContext=" + twinmeContext + " observer=" + observer);
         }
 
         mObserver = observer;
